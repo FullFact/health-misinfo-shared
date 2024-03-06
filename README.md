@@ -3,9 +3,10 @@
 (Respository shared by Full Fact and Google for work on a proof-of-concept)
 
 
-## Getting captions
+## Downloading some captions
 
-Use `youtube_api.py` to search by keywords and extract captions to a local filestore. Currently set up to prefer English-language captions, though we should aim to be language agnostic in production.
+Use `youtube_api.py` to search by keywords and extract captions to a local filestore, in `data/captions`. Currently set up to prefer English-language captions, though we should aim to be language agnostic in production. The location of the `CLIENT_SECRETS_FILE` needs to be set as an environment variable. ([How to get the credentials](https://developers.google.com/youtube/v3/quickstart/python))
+
 
 ## Extract claims
 
@@ -17,8 +18,8 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 `make_training_set()` loads a CSV file of training data and re-format, ready to fine-tune a model.
 
-`tuning()` carry out the fine-tuning.
+`tuning()` carries out the fine-tuning. This starts a remote job that takes c.45 minutes.
 
-`get_video_responses()` use a fine-tuned to generate reponses to the transcript of a video.
+`get_video_responses()` uses a fine-tuned model to generate reponses to the transcript of a video.
 
 
