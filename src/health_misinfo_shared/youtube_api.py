@@ -16,6 +16,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 
 scopes = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+YT_CREDENTIALS = None
 
 
 def clean_str(d: dict) -> dict:
@@ -37,7 +38,6 @@ def mostly_english(sentences):
 
 def get_captions(video_id: str) -> dict:
     video_url = f"https://www.youtube.com/watch?v={video_id}"
-    print(video_url)
     r = requests.get(video_url, allow_redirects=False, timeout=60)
     merged_transcripts = {}
 
@@ -150,12 +150,14 @@ def search_for_captions(query: str, folder: str):
     client_secrets_file = os.environ["CLIENT_SECRETS_FILE"]
 
     # Get credentials and create an API client
-    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        client_secrets_file, scopes
-    )
-    credentials = flow.run_local_server()  # opens browser for authentication
+    global YT_CREDENTIALS
+    if YT_CREDENTIALS is None:
+        flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+            client_secrets_file, scopes
+        )
+        YT_CREDENTIALS = flow.run_local_server()  # opens browser for authentication
     youtube = googleapiclient.discovery.build(
-        api_service_name, api_version, credentials=credentials
+        api_service_name, api_version, credentials=YT_CREDENTIALS
     )
 
     request = youtube.search().list(
