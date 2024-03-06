@@ -1,0 +1,1 @@
+Folder to store video captions as a local cache
