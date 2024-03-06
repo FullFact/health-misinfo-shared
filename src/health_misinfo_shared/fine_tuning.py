@@ -59,7 +59,7 @@ def tuning(
     # Removed tensorboard - not sure how to make it work; it provides some extra visualistion during training
     # eval_spec.tensorboard = aiplatform.Tensorboard(tensorboard_name=tensorboard_instance_name)
 
-    model = TextGenerationModel.from_pretrained("text-bison@001")  # or 002?
+    model = TextGenerationModel.from_pretrained("text-bison@002")  # or 002?
 
     model.tune_model(
         training_data=training_data,
@@ -74,7 +74,10 @@ def tuning(
 
 def make_training_set() -> pd.DataFrame:
     """Read a CSV file of labelled data, and create a list-of-JSON
-    training set and format as a DataFrame"""
+    training set and format as a DataFrame. CSV file should have 3 columns:
+    output_text (previously extracted claim), input_text (chunk of transcript), flag (True/False)
+    where True means "this should be checked" and False means "this is probably fine. 
+    No header row should be given."""
     # Target data structure: list of dicts
     # [{"input_text":"prompt1","output_text":"output1"}, {"input_text"...,}, ]
 
@@ -128,14 +131,15 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
     """Return the fine-tuned model with a given display_name."""
     # TODO: this reads through ALL the models until it finds one with the matching name.
     # If two models have the same name, it'll return one arbitrarily (not good)
-    # And is there a more efficient way of doing this?
+    # Is there a more efficient way of doing this?
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_TUNED_MODEL_LOCATION)
-    model = TextGenerationModel.from_pretrained("text-bison@001")
-    tuned_model_names = model.list_tuned_model_names()
+    pretrained_model = TextGenerationModel.from_pretrained("text-bison@002")
+    tuned_model_names = pretrained_model.list_tuned_model_names()
     for tuned_model_name in tuned_model_names:
         tuned_model = TextGenerationModel.get_tuned_model(tuned_model_name)
         if tuned_model._endpoint.display_name == display_name:
             return tuned_model
+    print(f"Model '{display_name}' not found")
 
 
 def get_video_responses(model, chunks: list[str]) -> None:
@@ -144,12 +148,10 @@ def get_video_responses(model, chunks: list[str]) -> None:
     all_responses = []
 
     for chunk in chunks:
-        print()
-        print(chunk)
         prompt = f"{HEALTH_TRAINING_PROMPT}\n```{chunk}``` "
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         response = model.predict(prompt)
-        print("Candidates:\t", response.candidates, "\n")
+        # print("Candidates:\t", response.candidates, "\n")
         for candidate in response.candidates:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
             try:
@@ -170,20 +172,16 @@ def get_video_responses(model, chunks: list[str]) -> None:
 
 
 if __name__ == "__main__":
+    # TODO: add simple command line options to fine-tune or load/use a model
+    
     # Fine-tune a new model:
     # _training_data = make_training_set()
-    # tuning("dc_tuned_2", _training_data)
-
-    # tuned_model_names = list_tuned_models()
-    # Awkward way of reloading model - works if you know the id
-    # model id 1304095557333024768 is dc_tuned_2
-    # model = TextGenerationModel.get_tuned_model(model_id)
-
-    model = get_model_by_display_name("dc_tuned_2")
+    # tuning("dc_tuned_3", _training_data)
+    
+    model = get_model_by_display_name("dc_tuned_3")
 
     some_captions = youtube_api.load_texts("heart_disease_nat_rem")
-    # chunks = youtube_api.form_chunks(some_captions[1])
-
+    
     all_responses = []
     for captions in some_captions[0:5]:
         chunks = youtube_api.form_chunks(captions)

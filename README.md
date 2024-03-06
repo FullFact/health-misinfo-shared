@@ -1,5 +1,7 @@
-# health-misinfo-shared
-Raphael health misinformation project, respository shared by Full Fact and Google 
+# Raphael health misinformation project
+
+(Respository shared by Full Fact and Google for work on a proof-of-concept)
+
 
 ## Getting captions
 
