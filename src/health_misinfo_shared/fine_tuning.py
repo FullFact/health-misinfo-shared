@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Optional
 from google.auth import default
 import pandas as pd
+import numpy as np
 import json
+from rouge_score import rouge_scorer
 import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
@@ -15,6 +17,7 @@ from prompts import (
     HEALTH_TRAINING_EXPLAIN_PROMPT,
 )
 import youtube_api
+from vertex import tidy_response
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
@@ -195,7 +198,7 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
     print(f"Model '{display_name}' not found")
 
 
-def get_video_responses(model, chunks: list[str]) -> None:
+def get_video_responses(model, chunks: list[str]) -> list[dict]:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
     all_responses = []
@@ -216,18 +219,17 @@ def get_video_responses(model, chunks: list[str]) -> None:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
             try:
                 if len(str(candidate.text)) > 0:
-                    print(candidate.safety_attributes)
+                    # print(candidate.safety_attributes)
                     json_text = candidate.text
-                    print("JSON output:  ", json_text)
+                    json_text = tidy_response(json_text)
                     formatted_response = {
-                        "claim": json.loads(candidate.text),
+                        "claim": json.loads(json_text),
                         "chunk": chunk,
                         "safety": candidate.safety_attributes,
                     }
                     all_responses.append(formatted_response)
             except Exception as e:
                 print("*** problem handling output? *** ", e)
-        print("=" * 80)
     return all_responses
 
 
@@ -238,14 +240,101 @@ def pretty_format_responses(responses):
         if len(response.get("claim", [])) == 0:
             print("No claims found!")
         else:
+            display_checkworthy = []
+            display_uncheckworthy = []
             for claim in response.get("claim", []):
-                print(f">>> {claim['explanation']:20s} {claim['claim']}")
+                if claim["explanation"] in CHECKWORTHY_EXPLANATIONS:
+                    # print(f">>> {claim['explanation']:20s} {claim['claim']}")
+                    display_checkworthy.append(claim)
+                elif claim["explanation"] in UNCHECKWORTHY_EXPLANATIONS:
+                    display_uncheckworthy.append(claim)
+                else:
+                    print(f"Unknown explanation! {claim['explanation']}")
+            _ = [
+                print(f"+++ {claim['explanation']:20s} {claim['claim']}")
+                for claim in display_checkworthy
+            ]
+            _ = [
+                print(f"--- {claim['explanation']:20s} {claim['claim']}")
+                for claim in display_uncheckworthy
+            ]
+
         print("=" * 80)
+
+
+def explain_eval():
+    """Simple evaluation of 'explaination'-type model by re-feeding training set into model"""
+    _training_data = pd.read_csv("data/training_set_v2.csv")
+    print(f"loaded {_training_data.shape[0]} records")
+    print(_training_data.head())
+    model = get_model_by_display_name("dc_tuned_explain_0")
+
+    # we only want to pass each chunk to model once! So group by chunk
+    grps = _training_data.groupby("chunk")
+    all_responses = []
+
+    for chunk, train_grp in grps:
+        print(train_grp.shape)  # first few: 1,1,5,5,5..
+
+        # should be list of length 1 as we only pass in one chunk:
+        responses = get_video_responses(model, [chunk])
+        all_responses += responses
+        # Step through responses, which should be dict of claim, explanation
+        # and for each one, find the claim in the _training_data group and compare the explanation
+        # Want to measure fine-grained label-matches and coarse-grained (checkworthy vs not-c.w.)
+        for response in responses[0].get("claim", []):
+            response_claim = response["claim"]
+            response_explanation = response["explanation"]
+
+            targs = list(train_grp["claim"].values)
+            best_idx = closest_rouge(response_claim, targs)
+            if best_idx >= 0:
+                print(f"Model claim:      \t{response_claim}")
+                print(f"Model explanation \t{response_explanation}")
+                print(f"Closest target:   \t{targs[best_idx]}")
+                print(
+                    f"Target explanation: \t{train_grp.iloc[best_idx]['explanation']}"
+                )
+                print(
+                    f'Label match? {train_grp.iloc[best_idx]["explanation"] == response_explanation}'
+                )
+            # else:
+            #     print(
+            #         f"No target match for {response_claim} \t / {response_explanation}"
+            #     )
+            print()
+
+    print("\n")
+    pretty_format_responses(all_responses)
+
+
+def closest_rouge(pred, targs):
+    """Take one predicted claim and find the nearest target claim"""
+    rouge_type = "rouge1"
+    scorer = rouge_scorer.RougeScorer([rouge_type], use_stemmer=False)
+
+    score_dicts = [scorer.score(t, pred) for t in targs]
+    # max_score = {}
+
+    # for k in rouge_types:
+    #     index = np.argmax([s[k].fmeasure for s in score_dicts])
+    #     max_score[k] = score_dicts[index][k]
+    #     print(index, max_score[k], targs[index])
+
+    index = np.argmax([s[rouge_type].fmeasure for s in score_dicts])
+    max_score = score_dicts[index]
+    # print(index, max_score, targs[index])
+    f_threshold = 0.5
+    if max_score[rouge_type].fmeasure > f_threshold:
+        return index
+    else:
+        return -1
+    # return max_score
 
 
 if __name__ == "__main__":
     # TODO: add simple command line options to fine-tune or load/use a model
-    mode = "infer"
+    mode = "eval"
 
     if mode == "train":
         # Fine-tune a new model:
@@ -257,11 +346,15 @@ if __name__ == "__main__":
     if mode == "infer":
         model = get_model_by_display_name("dc_tuned_explain_0")
 
-        some_captions = youtube_api.load_texts("heart_disease_nat_rem")
+        # some_captions = youtube_api.load_texts("heart_disease_nat_rem")
+        some_captions = youtube_api.load_texts("prostate_cancer_nat_rem")
 
         all_responses = []
-        for captions in some_captions[0:5]:
+        for captions in some_captions[0:3]:
             chunks = youtube_api.form_chunks(captions)
             all_responses += get_video_responses(model, chunks)
         print("\n\n")
         pretty_format_responses(all_responses)
+
+    if mode == "eval":
+        explain_eval()

@@ -2,6 +2,7 @@
 
 import json
 import csv
+import time
 import vertexai
 from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
@@ -14,11 +15,8 @@ GCP_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
 
 def tidy_response(response_text: str) -> str:
     """Strip unnecessary head/tail of response string"""
-    # TODO: Maybe use this library instead: https://github.com/noamgat/lm-format-enforcer
-    while response_text.startswith("`"):
-        response_text = response_text[1:]
-    while response_text.endswith("`"):
-        response_text = response_text[:-1]
+    # TODO: Maybe investigate this library instead: https://github.com/noamgat/lm-format-enforcer
+    response_text = response_text.strip(" `'\".")
     if response_text.startswith("json"):
         response_text = response_text[5:]
     return response_text
@@ -64,7 +62,6 @@ def process_video(transcript: dict) -> list[dict]:
             for found_claim in llm_response:
                 found_claim["video_id"] = video_id
                 found_claim["chunk"] = chunk
-                print(found_claim)
                 llm_responses.append(found_claim)
         except Exception as e:
             # just carry on for now...
@@ -84,7 +81,7 @@ def generate_training_set(folders: list[str], label: str):
             if len(video) == 0:
                 print(f"Nothing in {video} !")
                 continue
-            video_id = video[0].get("video_id")
+            # video_id = video[0].get("video_id")
 
             claims = process_video(video)
             all_responses.extend(claims)
@@ -96,6 +93,10 @@ def generate_training_set(folders: list[str], label: str):
                 cw = csv.DictWriter(f, title, quoting=csv.QUOTE_ALL)
                 cw.writeheader()
                 cw.writerows(all_responses)
+
+            print("<", end="")
+            time.sleep(10)  # slow things down a bit to avoid time-outs
+            print("> ", end="")
 
 
 if __name__ == "__main__":
