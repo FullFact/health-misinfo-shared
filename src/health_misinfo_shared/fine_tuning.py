@@ -3,14 +3,15 @@
 
 from __future__ import annotations
 from typing import Optional
-from google.auth import default
 import pandas as pd
 import numpy as np
+import csv
 import json
-from rouge_score import rouge_scorer
+from google.auth import default
 import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
+from rouge_score import rouge_scorer
 from prompts import (
     HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
@@ -205,7 +206,7 @@ def get_video_responses(model, chunks: list[str]) -> list[dict]:
 
     for chunk in chunks:
         prompt = f"{HEALTH_TRAINING_EXPLAIN_PROMPT}\n```{chunk}``` "
-        # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
+        # To improve JSON, could maybe append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
         # doesn't get truncated (and so become unreadable)
         parameters = {
@@ -223,7 +224,7 @@ def get_video_responses(model, chunks: list[str]) -> list[dict]:
                     json_text = candidate.text
                     json_text = tidy_response(json_text)
                     formatted_response = {
-                        "claim": json.loads(json_text),
+                        "response": json.loads(json_text),
                         "chunk": chunk,
                         "safety": candidate.safety_attributes,
                     }
@@ -237,12 +238,12 @@ def pretty_format_responses(responses):
     """Simple formatted display to console for review"""
     for response in responses:
         print(response["chunk"], "\n")
-        if len(response.get("claim", [])) == 0:
-            print("No claims found!")
+        if len(response.get("response", [])) == 0:
+            print("No claims found in response!")
         else:
             display_checkworthy = []
             display_uncheckworthy = []
-            for claim in response.get("claim", []):
+            for claim in response.get("response", []):
                 if claim["explanation"] in CHECKWORTHY_EXPLANATIONS:
                     # print(f">>> {claim['explanation']:20s} {claim['claim']}")
                     display_checkworthy.append(claim)
@@ -262,78 +263,109 @@ def pretty_format_responses(responses):
         print("=" * 80)
 
 
+def closest_rouge(pred: str, targs: list[str]) -> float:
+    """Take one predicted claim and find the nearest target claim from a list.
+    Returns the index of the best match if its score is above a threshold.
+    If no match is good, return -1"""
+    rouge_type = "rouge1"
+    scorer = rouge_scorer.RougeScorer([rouge_type], use_stemmer=False)
+
+    score_dicts = [scorer.score(t, pred) for t in targs]
+
+    index = np.argmax([s[rouge_type].fmeasure for s in score_dicts])
+    max_score = score_dicts[index]
+
+    # Apply a loose threshold then return best-match of what's left
+    f_threshold = 0.5
+    if max_score[rouge_type].fmeasure > f_threshold:
+        return index
+    else:
+        print(f"ROUGE match is below threshold: score {max_score[rouge_type].fmeasure}")
+        print(f"\ttarg {targs[index]}\n\tpred {pred}")
+        return -1
+
+
 def explain_eval():
-    """Simple evaluation of 'explaination'-type model by re-feeding training set into model"""
-    _training_data = pd.read_csv("data/training_set_v2.csv")
-    print(f"loaded {_training_data.shape[0]} records")
-    print(_training_data.head())
+    """Simple evaluation of 'explaination'-type model by feeding labelled set into model"""
+    # TODO: use a separate hold-out evaluation set instead of training set
+    target_data = pd.read_csv("data/training_set_v2.csv")
+    print(f"loaded {target_data.shape[0]} records")
+    print(target_data.head())
     model = get_model_by_display_name("dc_tuned_explain_0")
 
     # we only want to pass each chunk to model once! So group by chunk
-    grps = _training_data.groupby("chunk")
+    grps = target_data.groupby("chunk")
     all_responses = []
+    all_results = []
 
-    for chunk, train_grp in grps:
-        print(train_grp.shape)  # first few: 1,1,5,5,5..
-
+    for chunk, target_grp in grps:
+        print(f"Target claims found in this chunk: {target_grp.shape[0]}")
+        batch_results = []
         # should be list of length 1 as we only pass in one chunk:
         responses = get_video_responses(model, [chunk])
+        print(f"responses {len(responses)=}   {len(responses[0]['response'])=}")
         all_responses += responses
         # Step through responses, which should be dict of claim, explanation
         # and for each one, find the claim in the _training_data group and compare the explanation
         # Want to measure fine-grained label-matches and coarse-grained (checkworthy vs not-c.w.)
-        for response in responses[0].get("claim", []):
+        # TODO: accumulate responses and use sk-learn to calculate P,R,F1 etc.
+        # We'll need a table with every target_claim and every response_claim (whether it matches or not)
+        for response in responses[0].get("response", []):
             response_claim = response["claim"]
             response_explanation = response["explanation"]
 
-            targs = list(train_grp["claim"].values)
+            targs = list(target_grp["claim"].values)
             best_idx = closest_rouge(response_claim, targs)
+            this_result = {
+                "response_claim": response_claim,
+                "response_explanation": response_explanation,
+            }
             if best_idx >= 0:
                 print(f"Model claim:      \t{response_claim}")
                 print(f"Model explanation \t{response_explanation}")
                 print(f"Closest target:   \t{targs[best_idx]}")
                 print(
-                    f"Target explanation: \t{train_grp.iloc[best_idx]['explanation']}"
+                    f"Target explanation: \t{target_grp.iloc[best_idx]['explanation']}"
                 )
                 print(
-                    f'Label match? {train_grp.iloc[best_idx]["explanation"] == response_explanation}'
+                    f'Label match? {target_grp.iloc[best_idx]["explanation"] == response_explanation}'
                 )
-            # else:
+                this_result["target_claim"] = targs[best_idx]
+                this_result["target_explanation"] = target_grp.iloc[best_idx][
+                    "explanation"
+                ]
+            else:
+                this_result["target_claim"] = ""
+                this_result["target_explanation"] = ""
+
             #     print(
             #         f"No target match for {response_claim} \t / {response_explanation}"
             #     )
+            batch_results.append(this_result)
             print()
-
-    print("\n")
-    pretty_format_responses(all_responses)
-
-
-def closest_rouge(pred, targs):
-    """Take one predicted claim and find the nearest target claim"""
-    rouge_type = "rouge1"
-    scorer = rouge_scorer.RougeScorer([rouge_type], use_stemmer=False)
-
-    score_dicts = [scorer.score(t, pred) for t in targs]
-    # max_score = {}
-
-    # for k in rouge_types:
-    #     index = np.argmax([s[k].fmeasure for s in score_dicts])
-    #     max_score[k] = score_dicts[index][k]
-    #     print(index, max_score[k], targs[index])
-
-    index = np.argmax([s[rouge_type].fmeasure for s in score_dicts])
-    max_score = score_dicts[index]
-    # print(index, max_score, targs[index])
-    f_threshold = 0.5
-    if max_score[rouge_type].fmeasure > f_threshold:
-        return index
-    else:
-        return -1
-    # return max_score
+        for id, targ in target_grp.iterrows():
+            already_matched = [
+                b for b in batch_results if b["target_claim"] == targ["claim"]
+            ]
+            if not already_matched:
+                # Add in any targets that were not matched by this batch of responses
+                this_result = {
+                    "target_claim": targ["claim"],
+                    "target_explanation": targ["explanation"],
+                    "response_claim": "",
+                    "response_explanation": "",
+                }
+                batch_results.append(this_result)
+        all_results.extend(batch_results)
+    df_results = pd.DataFrame(all_results)
+    df_results.to_csv("eval_results.csv", quoting=csv.QUOTE_ALL)
+    print(f"Evaluation finished; wrote {df_results.shape[0]} rows.")
+    # print("\n")
+    # pretty_format_responses(all_responses)
 
 
 if __name__ == "__main__":
-    # TODO: add simple command line options to fine-tune or load/use a model
+    # TODO: add simple command line options to fine-tune or load/use a model or evaluate
     mode = "eval"
 
     if mode == "train":
@@ -346,8 +378,8 @@ if __name__ == "__main__":
     if mode == "infer":
         model = get_model_by_display_name("dc_tuned_explain_0")
 
-        # some_captions = youtube_api.load_texts("heart_disease_nat_rem")
-        some_captions = youtube_api.load_texts("prostate_cancer_nat_rem")
+        some_captions = youtube_api.load_texts("heart_disease_nat_rem")
+        # some_captions = youtube_api.load_texts("prostate_cancer_nat_rem")
 
         all_responses = []
         for captions in some_captions[0:3]:
