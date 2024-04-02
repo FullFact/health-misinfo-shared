@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import csv
 from rouge_score import rouge_scorer
-import fine_tuning
+from vertexai.language_models import TextGenerationModel
+from health_misinfo_shared import fine_tuning
 
 
 def closest_rouge(pred: str, targs: list[str]) -> float:
@@ -27,20 +28,19 @@ def closest_rouge(pred: str, targs: list[str]) -> float:
         return -1
 
 
-def explain_eval():
-    """Simple evaluation of 'explaination'-type model by feeding labelled set into model"""
+def explain_build_results_table(
+    model: TextGenerationModel, target_data: pd.DataFrame
+) -> pd.DataFrame:
+    """Simple evaluation of 'explaination'-type model by feeding labelled set into model.
+    Return a full table of results comparing target set and model outputs."""
     # TODO: use a separate hold-out evaluation set instead of training set
-    target_data = pd.read_csv("data/training_set_v2.csv")
-    print(f"loaded {target_data.shape[0]} records")
-    print(target_data.head())
-    model = fine_tuning.get_model_by_display_name("dc_tuned_explain_0")
 
     # we only want to pass each chunk to model once! So group by chunk
-    grps = target_data.groupby("chunk")
+    target_grps = target_data.groupby("chunk")
     all_responses = []
     all_results = []
 
-    for chunk, target_grp in grps:
+    for chunk, target_grp in target_grps:
         print(f"Target claims found in this chunk: {target_grp.shape[0]}")
         batch_results = []
         # should be list of length 1 as we only pass in one chunk:
@@ -101,9 +101,26 @@ def explain_eval():
         all_results.extend(batch_results)
     df_results = pd.DataFrame(all_results)
     df_results.to_csv("eval_results.csv", quoting=csv.QUOTE_ALL)
-    print(f"Evaluation finished; wrote {df_results.shape[0]} rows.")
-    # print("\n")
-    # pretty_format_responses(all_responses)
+    print(f"Got model results; wrote {df_results.shape[0]} rows.")
+
+    return df_results
+
+
+def evaluate(results: pd.DataFrame):
+    """Calculate P,R,F1 etc. from a set of results comparing target and model outputs"""
+
+    pass
+
+
+def explain_eval():
+    target_data = pd.read_csv("data/training_set_v2.csv")
+    target_data = target_data.head(10)
+    print(f"loaded {target_data.shape[0]} records")
+
+    model = fine_tuning.get_model_by_display_name("dc_tuned_explain_0")
+
+    df_results = explain_build_results_table(model, target_data)
+    evaluate(df_results)
 
 
 if __name__ == "__main__":

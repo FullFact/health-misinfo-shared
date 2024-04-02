@@ -10,13 +10,13 @@ import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
 
-from prompts import (
+from health_misinfo_shared.prompts import (
     HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
     HEALTH_TRAINING_EXPLAIN_PROMPT,
 )
-import youtube_api
-from vertex import tidy_response
+from health_misinfo_shared import youtube_api
+from health_misinfo_shared.vertex import tidy_response
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
