@@ -117,12 +117,14 @@ def evaluate(results: pd.DataFrame) -> dict:
     cw_response = results["response_explanation"].str.contains(checkworthy_pattern)
     cw_response = cw_response.fillna(False)
 
+    # Optionally store ressults in a table:
     # scores_df=pd.DataFrame({"response":cw_response,"target":cw_targ})
+
+    # setting average="binary" means only report scores for the "True" class
     precision, recall, f1, _support = precision_recall_fscore_support(
-        cw_targ, cw_response
+        cw_targ, cw_response, average="binary"
     )
 
-    # TODO: evaluation currently covers both True and False classes, but we only want one.
     metrics = {"f1": f1, "precision": precision, "recall": recall}
     return metrics
 

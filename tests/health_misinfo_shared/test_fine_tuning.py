@@ -24,7 +24,6 @@ def test_eval():
 
     raw_results = evaluation.explain_build_results_table(model, target_data)
     metrics_results = evaluation.evaluate(raw_results)
-    # print(raw_results)
-    # print(metrics_results)
-    assert metrics_results["precision"][0] == 1.0
-    assert metrics_results["recall"][0] == 1.0
+
+    assert metrics_results["precision"] == 1.0
+    assert metrics_results["recall"] == 1.0
