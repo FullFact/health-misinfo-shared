@@ -42,16 +42,14 @@ def explain_build_results_table(
     all_results = []
 
     for chunk, target_grp in target_grps:
-        print(f"Target claims found in this chunk: {target_grp.shape[0]}")
         batch_results = []
         # should be list of length 1 as we only pass in one chunk:
         responses = fine_tuning.get_video_responses(model, [chunk])
-        print(f"responses {len(responses)=}   {len(responses[0]['response'])=}")
+        # print(f"responses {len(responses)=}   {len(responses[0]['response'])=}")
         all_responses += responses
         # Step through responses, which should be dict of claim, explanation
         # and for each one, find the claim in the _training_data group and compare the explanation
         # Want to measure fine-grained label-matches and coarse-grained (checkworthy vs not-c.w.)
-        # TODO: accumulate responses and use sk-learn to calculate P,R,F1 etc.
         # We'll need a table with every target_claim and every response_claim (whether it matches or not)
         for response in responses[0].get("response", []):
             response_claim = response["claim"]
@@ -80,10 +78,6 @@ def explain_build_results_table(
             else:
                 this_result["target_claim"] = ""
                 this_result["target_explanation"] = ""
-
-            #     print(
-            #         f"No target match for {response_claim} \t / {response_explanation}"
-            #     )
             batch_results.append(this_result)
             print()
         for id, targ in target_grp.iterrows():
@@ -101,7 +95,7 @@ def explain_build_results_table(
                 batch_results.append(this_result)
         all_results.extend(batch_results)
     df_results = pd.DataFrame(all_results)
-    print(f"Got model results; wrote {df_results.shape[0]} rows.")
+    print(f"Got model results with {df_results.shape[0]} rows.")
 
     return df_results
 
@@ -128,6 +122,7 @@ def evaluate(results: pd.DataFrame) -> dict:
         cw_targ, cw_response
     )
 
+    # TODO: evaluation currently covers both True and False classes, but we only want one.
     metrics = {"f1": f1, "precision": precision, "recall": recall}
     return metrics
 
