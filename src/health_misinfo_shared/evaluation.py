@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import csv
+from sklearn.metrics import precision_recall_fscore_support
 from rouge_score import rouge_scorer
 from vertexai.language_models import TextGenerationModel
 from health_misinfo_shared import fine_tuning
@@ -100,28 +101,57 @@ def explain_build_results_table(
                 batch_results.append(this_result)
         all_results.extend(batch_results)
     df_results = pd.DataFrame(all_results)
-    df_results.to_csv("eval_results.csv", quoting=csv.QUOTE_ALL)
     print(f"Got model results; wrote {df_results.shape[0]} rows.")
 
     return df_results
 
 
-def evaluate(results: pd.DataFrame):
+def evaluate(results: pd.DataFrame) -> dict:
     """Calculate P,R,F1 etc. from a set of results comparing target and model outputs"""
+    # Input data frame will have columns:
+    # "response_claim" "response_explanation" "target_claim" "target_explanation"
 
-    pass
+    # We need to check the label type: if the response is missing, replace it with "nothing to check"
+    # Then map reponse_explanation and target_expalnation onto CHECKWORTHY_EXPLANATIONS or UNCHECKWORTHY_EXPLANATIONS
+    # and then calculate TP,FP etc.
+    checkworthy_pattern = "|".join(fine_tuning.CHECKWORTHY_EXPLANATIONS)
+    # List of claims that should have been labelled as True (=Checkworthy)
+    cw_targ = results["target_explanation"].str.contains(checkworthy_pattern)
+    cw_targ = cw_targ.fillna(False)
+
+    # List of claims that were labelled by the model as True (=Checkworthy)
+    cw_response = results["response_explanation"].str.contains(checkworthy_pattern)
+    cw_response = cw_response.fillna(False)
+
+    # scores_df=pd.DataFrame({"response":cw_response,"target":cw_targ})
+    precision, recall, f1, _support = precision_recall_fscore_support(
+        cw_targ, cw_response
+    )
+
+    metrics = {"f1": f1, "precision": precision, "recall": recall}
+    return metrics
 
 
-def explain_eval():
-    target_data = pd.read_csv("data/training_set_v2.csv")
-    target_data = target_data.head(10)
-    print(f"loaded {target_data.shape[0]} records")
-
+def explain_eval(target_data: pd.DataFrame) -> dict:
+    """ "Take a dataframe with some labelled chunks / claims.
+    Pass them through the fine-tuned model.
+    Compare the model predictions to the provided labels.
+    Calculate & return precision, recall, f1."""
     model = fine_tuning.get_model_by_display_name("dc_tuned_explain_0")
 
-    df_results = explain_build_results_table(model, target_data)
-    evaluate(df_results)
+    raw_results = explain_build_results_table(model, target_data)
+    raw_results.to_csv("eval_results.csv", quoting=csv.QUOTE_ALL)
+    metrics_results = evaluate(raw_results)
+
+    return metrics_results
 
 
 if __name__ == "__main__":
-    explain_eval()
+    # pass some of the training set back through the model:
+    _target_data = pd.read_csv("data/training_set_v2.csv")
+    print(f"loaded {_target_data.shape[0]} records")
+
+    # df_results = pd.read_csv("eval_results.csv")
+    # _metrics_results = evaluate(df_results)
+    _metrics_results = explain_eval(_target_data)
+    print(_metrics_results)
