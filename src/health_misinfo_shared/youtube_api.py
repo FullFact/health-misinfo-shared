@@ -8,6 +8,7 @@
 import os
 import re
 import json
+import string
 from pathlib import Path
 import requests
 from langdetect import detect
@@ -194,22 +195,87 @@ def download_captions_of_known_bad_health_vids():
         download_captions(video_id, "known_bad")
 
 
+def query_to_filename(query: str) -> str:
+    to_keep = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+    return "".join(filter(lambda x: x in to_keep, query.replace(" ", "_")))
+
+
 def mutli_issue_search():
     """Collect a fairly random set of videos across a range of health topics"""
-    issues = [
-        "HPV",
-        "ADHD",
-        "prostate cancer",
-        "acne",
-        "weight loss",
-        "heart disease",
-        "std",
+    conditions = [
+        "Hpv",
+        "Adhd",
+        "Prostate cancer",
+        "Acne",
+        "Weight loss",
+        "Heart disease",
+        "Std",
+        "Sti",
+        "Menopause",
+        "Eating disorders",
+        "Hiv",
+        "Aids",
+        "Pregnancy",
+        "Cancer",
+        "Anorexia",
+        "Bulimia",
+        "Proana",
+        "Promia",
+        "Diabetes",
+        "Epilepsy",
+        "Hypertension",
+        "H1N1",
+        "Zika",
+        "Ebola",
     ]
-    for issue in issues:
-        query = f'{issue} "natural remedy"'
-        folder = issue.replace(" ", "_") + "_nat_rem"
-        search_for_captions(query, folder)
+
+    things = [
+        "vaping",
+        "smoking",
+        "vaccines",
+        "Dieting",
+        "Marijuana",
+        "Ozempic",
+        "Opioids",
+        "Chiropracty",
+        "Homeopathy",
+        "Oxycodene",
+        "Oxycontin",
+        "Percocet",
+        "MMR",
+        "BMI",
+    ]
+
+    universal_queries = [
+        "We’ve all been wrong about {keyword}",
+        "your doctor doesn’t want you to know about {keyword}",
+        "your doctor isn’t telling you about {keyword}",
+        "your doctor doesn’t tell you about {keyword}",
+        "{keyword} secrets revealed",
+        "The shocking truth behind {keyword}",
+        "The truth about {keyword}",
+        "we don’t talk about {keyword}",
+        "we’ve all been wrong about {keyword}",
+        "{keyword} exposed",
+    ]
+
+    conditions_queries = [
+        "{keyword} natural remedies",
+        "The real cure for {keyword}",
+        "{keyword} hacks",
+    ]
+
+    things_queries = [
+        "I did {keyword} for a month. Here's what happened",
+    ]
+
+    for keyword in conditions:
+        for phrase in universal_queries:
+            query = phrase.format(keyword=keyword)
+            folder = query_to_filename(query)
+            search_for_captions(query, folder)
 
 
 if __name__ == "__main__":
     mutli_issue_search()
+    print()
