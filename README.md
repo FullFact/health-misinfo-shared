@@ -23,3 +23,6 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 `get_video_responses()` uses a fine-tuned model to generate reponses to the transcript of a video.
 
 
+## Create a database
+
+Run `python3 -m tools.db` to plonk database.db into the current directory. If any table already exists it will raise an Exception and quit.
