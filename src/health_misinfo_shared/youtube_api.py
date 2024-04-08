@@ -10,6 +10,7 @@ import re
 import json
 import string
 from pathlib import Path
+from typing import Iterator
 import requests
 from langdetect import detect
 import google_auth_oauthlib.flow
@@ -97,7 +98,7 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript_obj: dict) -> list[str]:
+def form_chunks(transcript_obj: dict) -> Iterator[str]:
     """Split/merged a list of sentences into series of overlapping text chunks."""
     current_chunk_text = ""
     for s in transcript_obj:
@@ -203,42 +204,43 @@ def query_to_filename(query: str) -> str:
 def mutli_issue_search():
     """Collect a fairly random set of videos across a range of health topics"""
     conditions = [
-        "Hpv",
-        "Adhd",
-        "Prostate cancer",
-        "Acne",
-        "Weight loss",
-        "Heart disease",
-        "Std",
-        "Sti",
-        "Menopause",
-        "Eating disorders",
-        "Hiv",
-        "Aids",
-        "Pregnancy",
-        "Cancer",
-        "Anorexia",
-        "Bulimia",
-        "Proana",
-        "Promia",
-        "Diabetes",
-        "Epilepsy",
-        "Hypertension",
+        "HPV",
+        "ADHD",
+        "prostate cancer",
+        "acne",
+        "weight loss",
+        "heart disease",
+        "STD",
+        "STI",
+        "menopause",
+        "eating disorders",
+        "HIV",
+        "AIDS",
+        "pregnancy",
+        "cancer",
+        "anorexia",
+        "bulimia",
+        "proana",
+        "promia",
+        "diabetes",
+        "epilepsy",
+        "hypertension",
         "H1N1",
         "Zika",
         "Ebola",
+        "psoriasis",
     ]
 
     things = [
         "vaping",
         "smoking",
         "vaccines",
-        "Dieting",
-        "Marijuana",
+        "dieting",
+        "marijuana",
         "Ozempic",
-        "Opioids",
-        "Chiropracty",
-        "Homeopathy",
+        "opioids",
+        "chiropracty",
+        "homeopathy",
         "Oxycodene",
         "Oxycontin",
         "Percocet",
@@ -270,9 +272,9 @@ def mutli_issue_search():
     ]
 
     for keyword in conditions:
+        folder = query_to_filename(keyword)
         for phrase in universal_queries:
             query = phrase.format(keyword=keyword)
-            folder = query_to_filename(query)
             search_for_captions(query, folder)
 
 
