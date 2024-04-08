@@ -243,9 +243,23 @@ def pretty_format_responses(responses):
         print("=" * 80)
 
 
+def save_all_responses(responses, texts_name) -> None:
+    claims, chunks, explanations = [], [], []
+    for response in responses:
+        if len(response.get("claim", [])) > 0:
+            for claim in response.get("claim", []):
+                claims.append(claim.get("claim"))
+                chunks.append(response.get("chunk"))
+                explanations.append(claim.get("explanation"))
+    data = pd.DataFrame({"chunk": chunks, "claim": claims, "explanation": explanations})
+    data.to_csv(f"data/inferred_labels/{texts_name}_labels.csv", index=False)
+
+
 if __name__ == "__main__":
     # TODO: add simple command line options to fine-tune or load/use a model
     mode = "infer"
+
+    texts = "weight_loss_nat_rem"
 
     if mode == "train":
         # Fine-tune a new model:
@@ -257,11 +271,12 @@ if __name__ == "__main__":
     if mode == "infer":
         model = get_model_by_display_name("dc_tuned_explain_0")
 
-        some_captions = youtube_api.load_texts("heart_disease_nat_rem")
+        some_captions = youtube_api.load_texts(texts)
 
         all_responses = []
-        for captions in some_captions[0:5]:
+        for captions in some_captions[0:15]:
             chunks = youtube_api.form_chunks(captions)
             all_responses += get_video_responses(model, chunks)
         print("\n\n")
+        save_all_responses(all_responses, texts)
         pretty_format_responses(all_responses)
