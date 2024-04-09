@@ -249,31 +249,37 @@ def mutli_issue_search():
     ]
 
     universal_queries = [
-        "We’ve all been wrong about {keyword}",
-        "your doctor doesn’t want you to know about {keyword}",
-        "your doctor isn’t telling you about {keyword}",
-        "your doctor doesn’t tell you about {keyword}",
-        "{keyword} secrets revealed",
-        "The shocking truth behind {keyword}",
-        "The truth about {keyword}",
-        "we don’t talk about {keyword}",
-        "we’ve all been wrong about {keyword}",
+        '"We\'ve all been wrong about" {keyword}',
+        '"your doctor doesn\'t want you to know about" {keyword}',
+        '"your doctor isn\'t telling you about" {keyword}',
+        '"your doctor doesn\'t tell you about" {keyword}',
+        '{keyword} "secrets revealed"',
+        '"The shocking truth behind" {keyword}',
+        '"The truth about" {keyword}',
+        '"we don’t talk about" {keyword}',
+        '"we’ve all been wrong about" {keyword}',
         "{keyword} exposed",
     ]
 
     conditions_queries = [
-        "{keyword} natural remedies",
-        "The real cure for {keyword}",
-        "{keyword} hacks",
+        '{keyword} "natural remedies"',
+        '"The real cure for" {keyword}',
+        '{keyword} "hacks"',
     ]
 
     things_queries = [
-        "I did {keyword} for a month. Here's what happened",
+        '{keyword} "for a month. Here\'s what happened"',
     ]
 
     for keyword in conditions:
         folder = query_to_filename(keyword)
-        for phrase in universal_queries:
+        for phrase in universal_queries + conditions_queries:
+            query = phrase.format(keyword=keyword)
+            search_for_captions(query, folder)
+
+    for keyword in things:
+        folder = query_to_filename(keyword)
+        for phrase in universal_queries + things_queries:
             query = phrase.format(keyword=keyword)
             search_for_captions(query, folder)
 
