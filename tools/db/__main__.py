@@ -22,7 +22,7 @@ table_video_transcripts = """
 
 table_training_claims = """
     CREATE TABLE training_claims (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         video_id TEXT,
         claim TEXT, 
         label TEXT,
@@ -33,7 +33,7 @@ table_training_claims = """
 
 table_inferred_claims = """
     CREATE TABLE inferred_claims (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         video_id TEXT,
         claim TEXT,
         label TEXT, 
