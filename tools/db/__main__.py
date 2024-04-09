@@ -22,7 +22,8 @@ table_video_transcripts = """
 
 table_training_claims = """
     CREATE TABLE training_claims (
-        id TEXT,
+        id INTEGER PRIMARY KEY,
+        video_id TEXT,
         claim TEXT, 
         label TEXT,
         offset_ms INTEGER,
@@ -32,7 +33,8 @@ table_training_claims = """
 
 table_inferred_claims = """
     CREATE TABLE inferred_claims (
-        id TEXT,
+        id INTEGER PRIMARY KEY,
+        video_id TEXT,
         claim TEXT,
         label TEXT, 
         model TEXT,
