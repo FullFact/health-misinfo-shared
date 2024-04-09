@@ -12,7 +12,7 @@ def create_table(db: Connection, statement: str) -> None:
     db.commit()
 
 table_video_transcripts = """
-    CREATE TABLE table_video_transcripts (
+    CREATE TABLE video_transcripts (
         id TEXT PRIMARY KEY,
         url TEXT,
         metadata TEXT,
@@ -21,23 +21,23 @@ table_video_transcripts = """
     """
 
 table_training_claims = """
-    CREATE TABLE table_training_claims (
+    CREATE TABLE training_claims (
         id TEXT,
         claim TEXT, 
         label TEXT,
         offset_ms INTEGER,
-        FOREIGN KEY (id) REFERENCES table_video_transcripts(id)
+        FOREIGN KEY (id) REFERENCES video_transcripts(id)
     );
     """
 
 table_inferred_claims = """
-    CREATE TABLE table_inferred_claims (
+    CREATE TABLE inferred_claims (
         id TEXT,
         claim TEXT,
         label TEXT, 
         model TEXT,
         offset_ms INTEGER,
-        FOREIGN KEY (id) REFERENCES table_video_transcripts(id)
+        FOREIGN KEY (id) REFERENCES video_transcripts(id)
     );
     """
 
