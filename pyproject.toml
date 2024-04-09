@@ -5,6 +5,10 @@ description = "Health misinformation from videos"
 authors = ["Full Fact","Google"]
 readme = "README.md"
 license = "Proprietary"
+packages = [
+  { include = "src/health_misinfo_shared" },
+  { include = "tools" }
+] # top level directory
 
 [build-system]
 requires = ["poetry-core"]
