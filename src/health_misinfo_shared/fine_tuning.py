@@ -13,6 +13,8 @@ from prompts import (
     HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
     HEALTH_TRAINING_EXPLAIN_PROMPT,
+    HEALTH_TRAINING_MULTI_LABEL_PROMPT,
+    HEALTH_INFER_MULTI_LABEL_PROMPT,
 )
 import youtube_api
 
@@ -168,6 +170,49 @@ def make_training_set_explanation() -> pd.DataFrame:
     return training_data_final_df
 
 
+def make_training_set_multi_label() -> pd.DataFrame:
+    training_data = pd.read_csv("data/multi_label_training_v1.csv")
+    training_data.columns = [
+        "output_text",
+        "input_text",
+        "understandability",
+        "type_of_claim",
+        "type_of_medical_claim",
+        "support",
+        "harm",
+    ]
+
+    training_data_final = []
+    grps = training_data.groupby("input_text")
+    for input_text, grp in grps:
+
+        this_input = prepend_prompt(input_text, HEALTH_TRAINING_MULTI_LABEL_PROMPT)
+        # for index, row in grp.iterrows():
+        #     assert row["explanation"] in VALID_EXPLANATIONS
+        this_output = [
+            {
+                "claim": row["output_text"],
+                "labels": {
+                    "understandability": row["understandability"],
+                    "type_of_claim": row["type_of_claim"],
+                    "type_of_medical_claim": row["type_of_medical_claim"],
+                    "support": row["support"],
+                    "harm": row["harm"],
+                },
+            }
+            for index, row in grp.iterrows()
+        ]
+        this_row = {
+            "input_text": this_input,
+            "output_text": this_output,
+        }
+        # Maximum input tokens: 8192
+        training_data_final.append(this_row)
+
+    training_data_final_df = pd.DataFrame(training_data_final)
+    return training_data_final_df
+
+
 def list_tuned_models() -> None:
     """List tuned models."""
     # not sure this is helpful - really want to list them by the model_display_name that
@@ -201,7 +246,7 @@ def get_video_responses(model, chunks: list[str]) -> None:
     all_responses = []
 
     for chunk in chunks:
-        prompt = f"{HEALTH_TRAINING_EXPLAIN_PROMPT}\n```{chunk}``` "
+        prompt = f"{HEALTH_INFER_MULTI_LABEL_PROMPT}\n```{chunk}``` "
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
         # doesn't get truncated (and so become unreadable)
@@ -250,12 +295,14 @@ if __name__ == "__main__":
     if mode == "train":
         # Fine-tune a new model:
         # _training_data = make_training_set()
-        _training_data = make_training_set_explanation()
-        _training_data.to_json("data/train_data_v2.json", orient="records", lines=True)
-        tuning("dc_tuned_explain_0", _training_data)
+        _training_data = make_training_set_multi_label()
+        _training_data.to_json(
+            "data/multi_label_training_v1.json", orient="records", lines=True
+        )
+        tuning("cj_tuned_multi_label_0", _training_data)
 
     if mode == "infer":
-        model = get_model_by_display_name("dc_tuned_explain_0")
+        model = get_model_by_display_name("cj_tuned_multi_label_0")
 
         some_captions = youtube_api.load_texts("heart_disease_nat_rem")
 
