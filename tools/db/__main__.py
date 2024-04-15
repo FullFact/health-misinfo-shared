@@ -6,10 +6,12 @@ Table = tuple[str, dict, list[str]]
 Not overdoing this
 """
 
+
 def create_table(db: Connection, statement: str) -> None:
     cur = db.cursor()
     cur.execute(statement)
     db.commit()
+
 
 table_video_transcripts = """
     CREATE TABLE video_transcripts (
@@ -27,7 +29,7 @@ table_training_claims = """
         claim TEXT, 
         label TEXT,
         offset_ms INTEGER,
-        FOREIGN KEY (id) REFERENCES video_transcripts(id)
+        FOREIGN KEY (video_id) REFERENCES video_transcripts(id)
     );
     """
 
@@ -39,7 +41,7 @@ table_inferred_claims = """
         label TEXT, 
         model TEXT,
         offset_ms INTEGER,
-        FOREIGN KEY (id) REFERENCES video_transcripts(id)
+        FOREIGN KEY (video_id) REFERENCES video_transcripts(id)
     );
     """
 
