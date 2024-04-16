@@ -38,7 +38,7 @@ def mostly_english(sentences):
     return en_count > (0.5 * len(sentences))
 
 
-def get_captions(video_id: str) -> dict:
+def get_captions(video_id: str, video_title: str | None = None) -> dict:
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     r = requests.get(video_url, allow_redirects=False, timeout=60)
     merged_transcripts = {}
@@ -58,6 +58,7 @@ def get_captions(video_id: str) -> dict:
             )
             transcript = {
                 "video_id": video_id,
+                "video_title": video_title,
                 "sentences": [clean_str(m.groupdict()) for m in pat.finditer(r.text)],
             }
             if mostly_english(transcript["sentences"]) or len(merged_transcripts) == 0:
@@ -112,13 +113,15 @@ def form_chunks(transcript_obj: dict) -> Iterator[str]:
     yield current_chunk_text
 
 
-def download_captions(video_id: str, folder: str) -> None:
+def download_captions(
+    video_id: str, folder: str, video_title: str | None = None
+) -> None:
     """Check if transcript for this video already exists in this folder.
     If not, try and download it there."""
     existing_captions = load_captions(video_id, folder)
     already_exists = len(existing_captions.get("sentences", [])) > 0
     if not already_exists:
-        captions = get_captions(video_id)
+        captions = get_captions(video_id, video_title=video_title)
         if captions:
             target_dir = f"data/captions/{folder}"
             Path(target_dir).mkdir(parents=True, exist_ok=True)
@@ -175,8 +178,9 @@ def search_for_captions(query: str, folder: str):
 
     for video in response["items"]:
         video_id = video.get("id").get("videoId")
-        print(video.get("snippet", {}).get("title"))
-        download_captions(video_id, folder)
+        video_title = video.get("snippet", {}).get("title")
+        print(video_title)
+        download_captions(video_id, folder, video_title=video_title)
 
 
 def download_captions_of_known_bad_health_vids():
@@ -201,7 +205,7 @@ def query_to_filename(query: str) -> str:
     return "".join(filter(lambda x: x in to_keep, query.replace(" ", "_")))
 
 
-def mutli_issue_search():
+def multi_issue_search():
     """Collect a fairly random set of videos across a range of health topics"""
     conditions = [
         "HPV",
@@ -285,5 +289,5 @@ def mutli_issue_search():
 
 
 if __name__ == "__main__":
-    mutli_issue_search()
+    multi_issue_search()
     print()
