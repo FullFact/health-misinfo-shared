@@ -363,6 +363,7 @@ if __name__ == "__main__":
         "weight_loss_nat_rem",
     ]
 
+    # Set to False is not the multilabel training set.
     multilabel = True
 
     if mode == "train":
