@@ -68,8 +68,6 @@ def get_transcript(id: str) -> ResponseReturnValue:
 @app.delete("/transcripts/<string:id>")
 def delete_transcript(id: str) -> ResponseReturnValue:
     execute_sql("DELETE FROM video_transcripts WHERE id = ?", (id,))
-    execute_sql("DELETE FROM training_claims WHERE video_id = ?", (id,))
-    execute_sql("DELETE FROM inferred_claims WHERE video_id = ?", (id,))
     return "", 204
 
 
@@ -94,6 +92,12 @@ def get_training_claims(id: str) -> ResponseReturnValue:
     return jsonify([{**c} for c in claims]), 200
 
 
+@app.delete("/training_claims/<string:id>")
+def delete_training_claim(id: str) -> ResponseReturnValue:
+    execute_sql("DELETE FROM training_claims WHERE id = ?", (id,))
+    return "", 204
+
+
 @app.post("/inferred_claims")
 def create_inferred_claim() -> ResponseReturnValue:
     data = request.get_json()
@@ -114,6 +118,12 @@ def create_inferred_claim() -> ResponseReturnValue:
 def get_inferred_claims(id: str) -> ResponseReturnValue:
     claims = execute_sql("SELECT * FROM inferred_claims WHERE video_id = ?", (id,))
     return jsonify([{**c} for c in claims]), 200
+
+
+@app.delete("/inferred_claims/<string:id>")
+def delete_inferred_claim(id: str) -> ResponseReturnValue:
+    execute_sql("DELETE FROM inferred_claims WHERE id = ?", (id,))
+    return "", 204
 
 
 if __name__ == "__main__":
