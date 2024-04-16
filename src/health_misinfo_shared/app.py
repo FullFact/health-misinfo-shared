@@ -1,17 +1,27 @@
 from typing import Any, Iterable
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask.typing import ResponseReturnValue
 import sqlite3
 from sqlite3 import Connection, Row
+
+DATABASE = "database.db"
 
 app = Flask(__name__)
 
 
 def get_db_connection() -> Connection:
-    """row_factory = Row makes the return value a mapping."""
-    conn = sqlite3.connect("database.db")
+    conn = g.get("_database")
+    if not conn:
+        conn = g._database = sqlite3.connect(DATABASE)
     conn.row_factory = Row
     return conn
+
+
+@app.teardown_appcontext
+def teardown_db_connection(exception: Any) -> None:
+    conn: Connection | None = g.get("_database")
+    if conn:
+        conn.close()
 
 
 def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
@@ -22,7 +32,7 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
     cur.execute(sql, params)
     data = cur.fetchall()
     conn.commit()
-    conn.close()
+    cur.close()
     return data
 
 
