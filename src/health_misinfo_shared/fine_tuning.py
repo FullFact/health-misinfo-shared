@@ -171,6 +171,10 @@ def make_training_set_explanation() -> pd.DataFrame:
 
 
 def make_training_set_multi_label() -> pd.DataFrame:
+    """
+    Same as function above, but uses multi label training data.
+    This will fail if labelled data is not multi-label, using the labels below.
+    """
     training_data = pd.read_csv("data/multi_label_training_v1.csv")
     training_data.columns = [
         "output_text",
@@ -240,13 +244,18 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
     print(f"Model '{display_name}' not found")
 
 
-def get_video_responses(model, chunks: list[str]) -> None:
+def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> None:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
+    infer_prompt = (
+        HEALTH_INFER_MULTI_LABEL_PROMPT
+        if multilabel
+        else HEALTH_TRAINING_EXPLAIN_PROMPT
+    )
     all_responses = []
 
     for chunk in chunks:
-        prompt = f"{HEALTH_INFER_MULTI_LABEL_PROMPT}\n```{chunk}``` "
+        prompt = f"{infer_prompt}\n```{chunk}``` "
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
         # doesn't get truncated (and so become unreadable)
@@ -276,7 +285,7 @@ def get_video_responses(model, chunks: list[str]) -> None:
     return all_responses
 
 
-def pretty_format_responses(responses):
+def pretty_format_responses(responses, multilabel: bool = False):
     """Simple formatted display to console for review"""
     for response in responses:
         print(response["chunk"], "\n")
@@ -284,27 +293,77 @@ def pretty_format_responses(responses):
             print("No claims found!")
         else:
             for claim in response.get("claim", []):
-                print(f">>> {claim['explanation']:20s} {claim['claim']}")
+                if multilabel:
+                    print(f">>> {claim['claim']}")
+                    print(f"    {claim['labels']}")
+                else:
+                    print(f">>> {claim['explanation']:20s} {claim['claim']}")
         print("=" * 80)
 
 
-def save_all_responses(responses, texts_name) -> None:
-    claims, chunks, explanations = [], [], []
+def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
+    """
+    Export responses to a csv. Format depends on if a multilabel response or not.
+    """
+    claims, chunks = [], []
+    if multilabel:
+        understandable, type_of_claim, med_type = [], [], []
+        support, harm, summary = [], [], []
+    else:
+        explanations = []
+
     for response in responses:
         if len(response.get("claim", [])) > 0:
             for claim in response.get("claim", []):
                 claims.append(claim.get("claim"))
                 chunks.append(response.get("chunk"))
-                explanations.append(claim.get("explanation"))
-    data = pd.DataFrame({"chunk": chunks, "claim": claims, "explanation": explanations})
-    data.to_csv(f"data/inferred_labels/{texts_name}_labels.csv", index=False)
+                if multilabel:
+                    labels = claim.get("labels")
+                    understandable.append(labels.get("understandability"))
+                    type_of_claim.append(labels.get("type_of_claim"))
+                    med_type.append(labels.get("type_of_medical_claim"))
+                    support.append(labels.get("support"))
+                    harm.append(labels.get("harm"))
+                    summary.append(labels.get("summary"))
+                else:
+                    explanations.append(claim.get("explanation"))
+    if multilabel:
+        data = pd.DataFrame(
+            {
+                "chunk": chunks,
+                "claim": claims,
+                "understandability": understandable,
+                "type of claim": type_of_claim,
+                "medical claim type": med_type,
+                "support": support,
+                "harm": harm,
+                "summary": summary,
+            }
+        )
+        datapath = f"data/inferred_labels/multilabel_v1/{texts_name}_labels.csv"
+    else:
+        data = pd.DataFrame(
+            {"chunk": chunks, "claim": claims, "explanation": explanations}
+        )
+        datapath = f"data/inferred_labels/{texts_name}_labels.csv"
+    data.to_csv(datapath, index=False)
 
 
 if __name__ == "__main__":
     # TODO: add simple command line options to fine-tune or load/use a model
     mode = "infer"
 
-    texts = "weight_loss_nat_rem"
+    texts_list = [
+        "acne_nat_rem",
+        "ADHD_nat_rem",
+        "heart_disease_nat_rem",
+        "HPV_nat_rem",
+        "prostate_cancer_nat_rem",
+        "std_nat_rem",
+        "weight_loss_nat_rem",
+    ]
+
+    multilabel = True
 
     if mode == "train":
         # Fine-tune a new model:
@@ -318,12 +377,13 @@ if __name__ == "__main__":
     if mode == "infer":
         model = get_model_by_display_name("cj_tuned_multi_label_0")
 
-        some_captions = youtube_api.load_texts(texts)
+        for texts in texts_list:
+            some_captions = youtube_api.load_texts(texts)
 
-        all_responses = []
-        for captions in some_captions[0:15]:
-            chunks = youtube_api.form_chunks(captions)
-            all_responses += get_video_responses(model, chunks)
-        print("\n\n")
-        save_all_responses(all_responses, texts)
-        pretty_format_responses(all_responses)
+            all_responses = []
+            for captions in some_captions[0:15]:
+                chunks = youtube_api.form_chunks(captions)
+                all_responses += get_video_responses(model, chunks, multilabel)
+            print("\n\n")
+            save_all_responses(all_responses, texts, multilabel)
+            pretty_format_responses(all_responses, multilabel)

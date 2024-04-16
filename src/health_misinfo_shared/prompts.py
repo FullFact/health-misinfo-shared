@@ -79,6 +79,7 @@ HEALTH_TRAINING_EXPLAIN_PROMPT = """
             Re-write the output and return nothing except correctly formatted JSON.
 """
 
+# The training prompt ofr multi-label evaluation.
 HEALTH_TRAINING_MULTI_LABEL_PROMPT = """           
             Your task is to help people quickly understand a video transcript and find the most harmful claims about health being made. 
             You should only consider claims that are on topics like health, medicine, personal health, public health, drugs, treatments or hospitals. 
@@ -138,7 +139,7 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
                                 "labels":
                                     {
                                         "understandability": <one of these labels: "understandable", "not understandable">,
-                                        "type_of_claim": <one of these labels: "opinion", "personal", "citation", "hedged claim", "not a claim">,
+                                        "type_of_claim": <one of these labels: "statement of fact", "advice/recommendation", "opinion", "personal", "citation", "hedged claim", "not a claim">,
                                         "type_of_medical_claim": <one of these labels: "symptom", "cause/effect", "correlation", "prevention", "statistics", "treatment/cure", "outcome", "not medical">,
                                         "support": <one of these labels: "uncontroversial statement", "disputed claim", "widely discredited", "novel claim", "can't tell">,
                                         "harm": <one of these labels: "high harm", "low harm", "some harm", "harmless", "indirect harm", "can't tell">,
@@ -148,6 +149,7 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
                 Re-write the output and return nothing except correctly formatted JSON.
 """
 
+# The inference prompt also asks the model to give a "summary"
 HEALTH_INFER_MULTI_LABEL_PROMPT = """           
             Your task is to help people quickly understand a video transcript and find the most harmful claims about health being made. 
             You should only consider claims that are on topics like health, medicine, personal health, public health, drugs, treatments or hospitals. 
@@ -212,7 +214,7 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
                                 "labels":
                                     {
                                         "understandability": <one of these labels: "understandable", "not understandable">,
-                                        "type_of_claim": <one of these labels: "opinion", "personal", "citation", "hedged claim", "not a claim">,
+                                        "type_of_claim": <one of these labels: "statement of fact", "advice/recommendation", "opinion", "personal", "citation", "hedged claim", "not a claim">,
                                         "type_of_medical_claim": <one of these labels: "symptom", "cause/effect", "correlation", "prevention", "statistics", "treatment/cure", "outcome", "not medical">,
                                         "support": <one of these labels: "uncontroversial statement", "disputed claim", "widely discredited", "novel claim", "can't tell">,
                                         "harm": <one of these labels: "high harm", "low harm", "some harm", "harmless", "indirect harm", "can't tell">,
