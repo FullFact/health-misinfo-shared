@@ -1,0 +1,12 @@
+.App {
+  text-align: left;
+  padding: 24px;
+}
+h6, h4{
+  margin-top: 24px;
+}
+
+.App ul {
+  list-style: none;
+  padding: 0
+}
