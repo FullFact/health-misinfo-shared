@@ -6,12 +6,13 @@ from google.auth import default
 
 import vertexai
 from vertexai.language_models import TextGenerationModel
+from vertexai.generative_models import GenerativeModel, Part
 
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
-GCP_LLM_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
+GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)
 
 FIND_HEALTH_CLAIMS_PROMPT = """
 I am going to give you the captions for a YouTube video in a JSON formatted string.
@@ -37,7 +38,7 @@ Here is an example of the output format:
 	{"original_claim": *claim n*, "reworded_claim": *reworded claim n*}
 ]
 
-Your output must be a machine readable json string only.
+Return nothing except correctly formatted JSON.
 
 Here is the video I would like you to process:
 """.strip()
@@ -63,13 +64,27 @@ def loop_through_videos(video_caption_directory: str) -> Iterator[str]:
             yield json.dumps(video)
 
 
-def load_model() -> TextGenerationModel:
+def load_model() -> GenerativeModel:
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_LLM_LOCATION)
-    return TextGenerationModel.from_pretrained("text-bison@002")
+    return GenerativeModel(model_name="gemini-1.5-pro-preview-0409")
+
+
+def parse_model_json_output(model_output: str) -> list[dict[str, str]]:
+    model_output = model_output.strip()
+    if model_output.startswith("[") and model_output.endswith("]"):
+        return json.loads(model_output)
+
+    first_square_bracket_idx = model_output.find("[")
+    last_square_bracket_idx = model_output.rfind("]")
+    if first_square_bracket_idx > 0 and last_square_bracket_idx > 0:
+        return json.loads(
+            model_output[first_square_bracket_idx : last_square_bracket_idx + 1]
+        )
+    raise Exception("Could not parse the string.")
 
 
 def find_health_claims(
-    model: TextGenerationModel, video_json_string: str
+    model: GenerativeModel, video_json_string: str
 ) -> dict[str, Any] | None:
     prompt = FIND_HEALTH_CLAIMS_PROMPT + "\n" + video_json_string
     parameters = {
@@ -79,17 +94,17 @@ def find_health_claims(
         "top_p": 1,
     }
     try:
-        response = model.predict(prompt, **parameters)
+        response = model.generate_content(prompt, generation_config=parameters)
     except Exception as e:
         print("Model couldn't process video")
         print(e)
 
     try:
         candidate = response.candidates[0]
-        health_claims = json.loads(candidate.text)
+        health_claims = parse_model_json_output(candidate.text)
         return {
             "video_id": json.loads(video_json_string)["video_id"],
-            "safety": candidate.safety_attributes,
+            # "safety": candidate.safety_attributes,
             "health_claims": health_claims,
         }
 
@@ -110,6 +125,7 @@ def find_health_claims_for_all_videos(
 
         filename = f"health_claims_{health_claims['video_id']}.json"
         with open(os.path.join(output_directory, filename), "w") as out_file:
+            print(f"Writing {filename}")
             json.dump(health_claims, out_file, indent=4)
 
 
