@@ -3,20 +3,22 @@
 
 from __future__ import annotations
 from typing import Optional
-from google.auth import default
-import pandas as pd
 import json
+import pandas as pd
+from google.auth import default
 import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
-from prompts import (
+
+from health_misinfo_shared.prompts import (
     HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
     HEALTH_TRAINING_EXPLAIN_PROMPT,
     HEALTH_TRAINING_MULTI_LABEL_PROMPT,
     HEALTH_INFER_MULTI_LABEL_PROMPT,
 )
-import youtube_api
+from health_misinfo_shared import youtube_api
+from health_misinfo_shared.vertex import tidy_response
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
@@ -270,29 +272,29 @@ def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> N
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
             try:
                 if len(str(candidate.text)) > 0:
-                    print(candidate.safety_attributes)
+                    # print(candidate.safety_attributes)
                     json_text = candidate.text
-                    print("JSON output:  ", json_text)
+                    json_text = tidy_response(json_text)
                     formatted_response = {
-                        "claim": json.loads(candidate.text),
+                        "response": json.loads(json_text),
                         "chunk": chunk,
                         "safety": candidate.safety_attributes,
                     }
                     all_responses.append(formatted_response)
             except Exception as e:
                 print("*** problem handling output? *** ", e)
-        print("=" * 80)
     return all_responses
 
 
 def pretty_format_responses(responses, multilabel: bool = False):
     """Simple formatted display to console for review"""
+
     for response in responses:
         print(response["chunk"], "\n")
-        if len(response.get("claim", [])) == 0:
+        if len(response.get("response", [])) == 0:
             print("No claims found!")
         else:
-            for claim in response.get("claim", []):
+            for claim in response.get("response", []):
                 if multilabel:
                     print(f">>> {claim['claim']}")
                     print(f"    {claim['labels']}")
@@ -350,7 +352,7 @@ def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    # TODO: add simple command line options to fine-tune or load/use a model
+    # TODO: add simple command line options to fine-tune or load/use a model or evaluate
     mode = "infer"
 
     texts_list = [
@@ -378,13 +380,23 @@ if __name__ == "__main__":
     if mode == "infer":
         model = get_model_by_display_name("cj_tuned_multi_label_0")
 
-        for texts in texts_list:
+        # some_captions = youtube_api.load_texts("heart_disease_nat_rem")
+        # # some_captions = youtube_api.load_texts("prostate_cancer_nat_rem")
+
+        # all_responses = []
+        # for captions in some_captions[0:3]:
+        #     chunks = youtube_api.form_chunks(captions)
+        #     all_responses += get_video_responses(model, chunks)
+        # print("\n\n")
+        # pretty_format_responses(all_responses)
+
+        for texts in texts_list[0:2]:
             some_captions = youtube_api.load_texts(texts)
 
             all_responses = []
-            for captions in some_captions[0:15]:
+            for captions in some_captions[0:5]:
                 chunks = youtube_api.form_chunks(captions)
                 all_responses += get_video_responses(model, chunks, multilabel)
             print("\n\n")
-            save_all_responses(all_responses, texts, multilabel)
+            # save_all_responses(all_responses, texts, multilabel)
             pretty_format_responses(all_responses, multilabel)

@@ -22,6 +22,12 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 `get_video_responses()` uses a fine-tuned model to generate reponses to the transcript of a video.
 
+## Model types
+
+
+**simple-type** model: given a transcript, it is trained to return a list of harmful health-related claims 
+
+**explaination-type** model: given a transcript, it is trained to return a list of health-related claims with an explanation label predicting how checkworthy it is and why. These labels (for concepts like "high harm", "cites study" etc.) allow us to add expert knowledge into the training data.
 
 ## Create a database
 
