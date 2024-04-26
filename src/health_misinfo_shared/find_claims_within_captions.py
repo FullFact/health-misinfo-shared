@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from typing import Iterator, Any
 
 from google.auth import default
@@ -13,6 +14,13 @@ credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)
+
+MODEL_PER_MINUTE_QUOTA = {
+    "gemini-1.5-pro-preview-0409": 5,
+    "gemini-1.0-pro": 300,
+}
+
+CURRENT_MODEL = "gemini-1.0-pro"
 
 FIND_HEALTH_CLAIMS_PROMPT = """
 I am going to give you the captions for a YouTube video in a JSON formatted string.
@@ -66,7 +74,7 @@ def loop_through_videos(video_caption_directory: str) -> Iterator[str]:
 
 def load_model() -> GenerativeModel:
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_LLM_LOCATION)
-    return GenerativeModel(model_name="gemini-1.5-pro-preview-0409")
+    return GenerativeModel(model_name=CURRENT_MODEL)
 
 
 def parse_model_json_output(model_output: str) -> list[dict[str, str]]:
@@ -89,7 +97,7 @@ def find_health_claims(
     prompt = FIND_HEALTH_CLAIMS_PROMPT + "\n" + video_json_string
     parameters = {
         "candidate_count": 1,
-        "max_output_tokens": 2048,
+        "max_output_tokens": 8192,
         "temperature": 0,
         "top_p": 1,
     }
@@ -98,6 +106,7 @@ def find_health_claims(
     except Exception as e:
         print("Model couldn't process video")
         print(e)
+        return None
 
     try:
         candidate = response.candidates[0]
@@ -119,11 +128,19 @@ def find_health_claims_for_all_videos(
 ) -> None:
     model = load_model()
     for video_string in loop_through_videos(caption_directory):
+        video_id = json.loads(video_string)["video_id"]
+        filename = f"health_claims_{video_id}.json"
+
+        if os.path.exists(os.path.join(output_directory, filename)):
+            print(f"Already processed {video_id}")
+            continue
+
         health_claims = find_health_claims(model, video_string)
+
+        time.sleep(60 / MODEL_PER_MINUTE_QUOTA[CURRENT_MODEL])  # avoid rate limiting
         if health_claims is None:
             continue
 
-        filename = f"health_claims_{health_claims['video_id']}.json"
         with open(os.path.join(output_directory, filename), "w") as out_file:
             print(f"Writing {filename}")
             json.dump(health_claims, out_file, indent=4)
