@@ -78,7 +78,11 @@ def find_health_claims(
         "temperature": 0,
         "top_p": 1,
     }
-    response = model.predict(prompt, **parameters)
+    try:
+        response = model.predict(prompt, **parameters)
+    except Exception as e:
+        print("Model couldn't process video")
+        print(e)
 
     try:
         candidate = response.candidates[0]
