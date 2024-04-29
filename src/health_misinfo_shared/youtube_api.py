@@ -90,7 +90,7 @@ def load_captions(video_id: str, folder) -> dict:
 
 def load_texts(folder) -> list[dict]:
     """Reload captions from given local file cache for a query and form
-    a simple list of sentences"""
+    a list of sentences with text, start-time and video-id"""
     flat_list = []
     for filename in os.listdir(f"data/captions/{folder}"):
         vid_cap = load_captions(filename.replace(".json", ""), folder)
