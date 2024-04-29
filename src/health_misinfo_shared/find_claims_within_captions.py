@@ -20,6 +20,19 @@ MODEL_PER_MINUTE_QUOTA = {
     "gemini-1.0-pro": 300,
 }
 
+MODEL_PER_1000_CHARS_COST = {
+    "input": {
+        "gemini-1.5-pro-preview-0409": 0.000125,
+        "gemini-1.0-pro": 0.000375,
+    },
+    "output": {
+        "gemini-1.5-pro-preview-0409": 0.0025,
+        "gemini-1.0-pro": 0.0075,
+    },
+}
+
+CUM_PRICE: int = 0
+
 CURRENT_MODEL = "gemini-1.0-pro"
 
 FIND_HEALTH_CLAIMS_PROMPT = """
@@ -91,6 +104,19 @@ def parse_model_json_output(model_output: str) -> list[dict[str, str]]:
     raise Exception("Could not parse the string.")
 
 
+def print_info(video_id: str, input_str: str, output_str: str) -> None:
+    in_chars = len(input_str)
+    out_chars = len(output_str)
+
+    in_price = in_chars / 1000 * MODEL_PER_1000_CHARS_COST["input"][CURRENT_MODEL]
+    out_price = out_chars / 1000 * MODEL_PER_1000_CHARS_COST["output"][CURRENT_MODEL]
+    price = in_price + out_price
+
+    global CUM_PRICE
+    CUM_PRICE += price
+    print(f"{video_id} - ${price:.2f} - TOTAL: {CUM_PRICE:.2f}")
+
+
 def find_health_claims(
     model: GenerativeModel, video_json_string: str
 ) -> dict[str, Any] | None:
@@ -110,9 +136,11 @@ def find_health_claims(
 
     try:
         candidate = response.candidates[0]
+        video_id = json.loads(video_json_string)["video_id"]
+        print_info(video_id, prompt, candidate.text)
         health_claims = parse_model_json_output(candidate.text)
         return {
-            "video_id": json.loads(video_json_string)["video_id"],
+            "video_id": video_id,
             # "safety": candidate.safety_attributes,
             "health_claims": health_claims,
         }
@@ -142,7 +170,6 @@ def find_health_claims_for_all_videos(
             continue
 
         with open(os.path.join(output_directory, filename), "w") as out_file:
-            print(f"Writing {filename}")
             json.dump(health_claims, out_file, indent=4)
 
 
