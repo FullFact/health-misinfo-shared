@@ -32,3 +32,11 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 ## Create a database
 
 Run `python3 -m tools.db` to plonk database.db into the current directory. If any table already exists it will raise an Exception and quit.
+
+## Getting claims for YouTube captions
+
+For building a set of labelled data, we want to get health claims, without all the other stuff we're predicting.
+The `find_claims_within_captions.py` script takes our downloaded YouTube captions and asks Gemini to find all the claims contained within.
+
+> Note on Gemini 1.5: to use this version you have to specify `gemini-1.5-pro-preview-0409` rather than just `gemini-1.5-pro` like you would for 1.0.
+
