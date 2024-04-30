@@ -5,6 +5,10 @@ description = "Health misinformation from videos"
 authors = ["Full Fact","Google"]
 readme = "README.md"
 license = "Proprietary"
+packages = [
+  { include = "src/health_misinfo_shared" },
+  { include = "tools" }
+] # top level directory
 
 [build-system]
 requires = ["poetry-core"]
@@ -17,6 +21,7 @@ structlog = "^23.1.0"
 pydantic = ">1.7"
 google-cloud-aiplatform = "^1.38"
 pandas = "1.5"
+scikit-learn = ">=1.4"
 
 # For youtube access:
 google-api-python-client="^2.118.0"
@@ -24,6 +29,7 @@ google-auth-oauthlib="^1.2.0"
 google-auth-httplib2="^0.2.0"
 langdetect="^1.0.9"
 flask = "^3.0.3"
+pyarrow = "^15.0.2"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -35,6 +41,7 @@ mypy = ">0.9"
 pre-commit = "^3.3.3"
 pytest = "^7.4.0"
 pytest-asyncio = "^0.21.1"
+rouge-score = ">0.1"
 
 [tool.pytest.ini_options]
 pythonpath = "src"
@@ -45,6 +52,7 @@ filterwarnings = [
     # "ignore:Call to deprecated function _.*:schematics.deprecated.SchematicsDeprecationWarning", # Schematics internal warnings
     # "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
 ] # Ignore some noisy and unfixable warnings
+
 
 [tool.isort]
 profile = "black"
