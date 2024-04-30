@@ -22,13 +22,13 @@ pydantic = ">1.7"
 google-cloud-aiplatform = "^1.38"
 pandas = "1.5"
 scikit-learn = ">=1.4"
+flask = "^3.0.3"
 
 # For youtube access:
 google-api-python-client="^2.118.0"
 google-auth-oauthlib="^1.2.0"
 google-auth-httplib2="^0.2.0"
 langdetect="^1.0.9"
-flask = "^3.0.3"
 pyarrow = "^15.0.2"
 
 
