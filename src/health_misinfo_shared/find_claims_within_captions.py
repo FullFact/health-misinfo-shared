@@ -9,6 +9,8 @@ import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.generative_models import GenerativeModel, Part
 
+from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
+
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
@@ -34,35 +36,6 @@ MODEL_PER_1000_CHARS_COST = {
 CUM_PRICE: int = 0
 
 CURRENT_MODEL = "gemini-1.0-pro"
-
-FIND_HEALTH_CLAIMS_PROMPT = """
-I am going to give you the captions for a YouTube video in a JSON formatted string.
-
-You are a health fact checker, trying to identify claims in the video's text.
-
-I would like you to produce a list of all of the health related claims contained within the video.
-
-You should only consider claims that are on health topics including  personal health, public health, medicine, mental health, drugs, treatments or hospitals.
-
-Ignore sentences that are not directly about some aspect of health, and also ignore sentences that make vague statements or are about someone's individual and personal experiences.
-
-It is okay if you do not find any claims. Not every video will have them. Only return a claim if you are confident it is a health related claim.
-
-As well as the original claim, please include a rewording of the claims so they make sense without extra context, while still keeping the meaning the same as in the original text.
-
-Your output should be a json encoded list of dictionaries.
-
-Here is an example of the output format:
-[
-	{"original_claim": *claim 1*, "reworded_claim": *reworded claim 1*},
-	...,
-	{"original_claim": *claim n*, "reworded_claim": *reworded claim n*}
-]
-
-Return nothing except correctly formatted JSON.
-
-Here is the video I would like you to process:
-""".strip()
 
 
 def loop_through_videos(video_caption_directory: str) -> Iterator[str]:
@@ -120,7 +93,7 @@ def print_info(video_id: str, input_str: str, output_str: str) -> None:
 def find_health_claims(
     model: GenerativeModel, video_json_string: str
 ) -> dict[str, Any] | None:
-    prompt = FIND_HEALTH_CLAIMS_PROMPT + "\n" + video_json_string
+    prompt = TRAINING_SET_HEALTH_CLAIMS_PROMPT + "\n" + video_json_string
     parameters = {
         "candidate_count": 1,
         "max_output_tokens": 8192,
