@@ -26,3 +26,12 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 ## Create a database
 
 Run `python3 -m tools.db` to plonk database.db into the current directory. If any table already exists it will raise an Exception and quit.
+
+## Deploy/update a server
+
+Install Ansible. Write the IP of the target server to a file, i.e. `hosts`:
+```
+<target host ip>
+```
+
+Run `ansible-playbook -i hosts ansible/playbooks/nginx_docker.yaml` to deploy to that IP address. You will need SSH access to the host.
