@@ -6,7 +6,7 @@ authors = ["Full Fact","Google"]
 readme = "README.md"
 license = "Proprietary"
 packages = [
-  { include = "src/health_misinfo_shared" },
+  { include = "health_misinfo_shared", from="src" },
   { include = "tools" }
 ] # top level directory
 
