@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 from typing import Optional
+import json
+import pandas as pd
 from google.auth import default
 import pandas as pd
 import json
@@ -10,7 +12,8 @@ import os
 import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
-from health_misinfo_shared.prompts import (
+
+from health_misinfo_shared.health_misinfo_shared.prompts import (
     HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
     HEALTH_TRAINING_EXPLAIN_PROMPT,
@@ -310,12 +313,13 @@ def get_video_responses(
 
 def pretty_format_responses(responses, multilabel: bool = False):
     """Simple formatted display to console for review"""
+
     for response in responses:
         print(response["chunk"], "\n")
-        if len(response.get("claim", [])) == 0:
+        if len(response.get("response", [])) == 0:
             print("No claims found!")
         else:
-            for claim in response.get("claim", []):
+            for claim in response.get("response", []):
                 if multilabel:
                     print(f">>> {claim['claim']}")
                     print(f"    {claim['labels']}")
@@ -396,7 +400,7 @@ def save_all_responses(
 
 
 if __name__ == "__main__":
-    # TODO: add simple command line options to fine-tune or load/use a model
+    # TODO: add simple command line options to fine-tune or load/use a model or evaluate
     mode = "infer"
 
     texts_list = [
@@ -430,17 +434,27 @@ if __name__ == "__main__":
         if mode == "infer":
             model = get_model_by_display_name("cj_tuned_multi_label_0")
 
-            for texts in texts_list:
+            # some_captions = youtube_api.load_texts("heart_disease_nat_rem")
+        # # some_captions = youtube_api.load_texts("prostate_cancer_nat_rem")
+
+        # all_responses = []
+        # for captions in some_captions[0:3]:
+        #     chunks = youtube_api.form_chunks(captions)
+        #     all_responses += get_video_responses(model, chunks)
+        # print("\n\n")
+        # pretty_format_responses(all_responses)
+
+        for texts in texts_list[0:2]:
                 some_captions = youtube_api.load_texts(texts)
 
                 all_responses = []
-                for captions in some_captions[0:15]:
+                for captions in some_captions[0:5]:
                     chunks = youtube_api.form_chunks(captions)
                     all_responses += get_video_responses(
                         model, chunks, intro, multilabel
                     )
                 print("\n\n")
-                save_all_responses(
+                # save_all_responses(
                     all_responses, texts, multilabel, intro_name=intro_name
                 )
                 pretty_format_responses(all_responses, multilabel)
