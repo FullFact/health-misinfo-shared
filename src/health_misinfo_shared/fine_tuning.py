@@ -6,17 +6,25 @@ from typing import Optional
 from google.auth import default
 import pandas as pd
 import json
+import os
 import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
-from prompts import (
+from health_misinfo_shared.prompts import (
     HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
     HEALTH_TRAINING_EXPLAIN_PROMPT,
     HEALTH_TRAINING_MULTI_LABEL_PROMPT,
     HEALTH_INFER_MULTI_LABEL_PROMPT,
+    FACTCHECKER_INTRO,
+    TABLOID_INTRO,
+    BROADSHEET_INTRO,
+    UNDERGRAD_INTRO,
+    ACADEMIC_INTRO,
+    ANTIVAX_INTRO,
+    SPY_INTRO,
 )
-import youtube_api
+from health_misinfo_shared import youtube_api
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
@@ -26,6 +34,16 @@ GCP_TUNED_MODEL_LOCATION = "europe-west4"  # where we do fine tuning/model stora
 CHECKWORTHY_EXPLANATIONS = ["high harm", "citation", "low harm"]
 UNCHECKWORTHY_EXPLANATIONS = ["nothing to check", "hedged claim"]
 VALID_EXPLANATIONS = CHECKWORTHY_EXPLANATIONS + UNCHECKWORTHY_EXPLANATIONS
+
+intro_names = {
+    # "factchecker": FACTCHECKER_INTRO,
+    # "tabloid": TABLOID_INTRO,
+    "broadsheet": BROADSHEET_INTRO,
+    # "undergrad": UNDERGRAD_INTRO,
+    # "academic": ACADEMIC_INTRO,
+    # "antivax": ANTIVAX_INTRO,
+    # "spy": SPY_INTRO,
+}
 
 
 def tuning(
@@ -244,7 +262,9 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
     print(f"Model '{display_name}' not found")
 
 
-def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> None:
+def get_video_responses(
+    model, chunks: list[str], intro: str | None = None, multilabel: bool = False
+) -> None:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
     infer_prompt = (
@@ -252,6 +272,9 @@ def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> N
         if multilabel
         else HEALTH_TRAINING_EXPLAIN_PROMPT
     )
+
+    infer_prompt = intro + infer_prompt if intro else infer_prompt
+
     all_responses = []
 
     for chunk in chunks:
@@ -268,19 +291,19 @@ def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> N
         response = model.predict(prompt, **parameters)
         for candidate in response.candidates:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
-            try:
-                if len(str(candidate.text)) > 0:
-                    print(candidate.safety_attributes)
-                    json_text = candidate.text
-                    print("JSON output:  ", json_text)
-                    formatted_response = {
-                        "claim": json.loads(candidate.text),
-                        "chunk": chunk,
-                        "safety": candidate.safety_attributes,
-                    }
-                    all_responses.append(formatted_response)
-            except Exception as e:
-                print("*** problem handling output? *** ", e)
+            # try:
+            if len(str(candidate.text)) > 0:
+                print(candidate.safety_attributes)
+                json_text = candidate.text
+                print("JSON output:  ", json_text)
+                formatted_response = {
+                    "claim": json.loads(candidate.text),
+                    "chunk": chunk,
+                    "safety": candidate.safety_attributes,
+                }
+                all_responses.append(formatted_response)
+            # except Exception as e:
+            #     print("*** problem handling output? *** ", e)
         print("=" * 80)
     return all_responses
 
@@ -301,9 +324,17 @@ def pretty_format_responses(responses, multilabel: bool = False):
         print("=" * 80)
 
 
-def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
+def save_all_responses(
+    responses,
+    texts_name,
+    multilabel: bool = False,
+    datapath: str = None,
+    intro_name: str = None,
+) -> None:
     """
     Export responses to a csv. Format depends on if a multilabel response or not.
+    Flag if using multilabel prompt.
+    Provide datapath for where to save output if default is not correct.
     """
     claims, chunks = [], []
     if multilabel:
@@ -340,12 +371,27 @@ def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
                 "summary": summary,
             }
         )
-        datapath = f"data/inferred_labels/multilabel_v1/{texts_name}_labels.csv"
+        if not datapath:
+            if intro_name is not None:
+                if not os.path.exists(
+                    f"data/inferred_labels/multilabel_v1/{intro_name}/"
+                ):
+                    os.mkdir(f"data/inferred_labels/multilabel_v1/{intro_name}/")
+                datapath = f"data/inferred_labels/multilabel_v1/{intro_name}/{texts_name}_labels.csv"
+            else:
+                datapath = f"data/inferred_labels/multilabel_v1/{texts_name}_labels.csv"
     else:
         data = pd.DataFrame(
             {"chunk": chunks, "claim": claims, "explanation": explanations}
         )
-        datapath = f"data/inferred_labels/{texts_name}_labels.csv"
+        if not datapath:
+            if intro_name is not None:
+                if not os.path.exists(f"data/inferred_labels/{intro_name}/"):
+                    os.mkdir(f"data/inferred_labels/{intro_name}/")
+                datapath = f"data/inferred_labels/{intro_name}/{texts_name}_labels.csv"
+            else:
+                datapath = f"data/inferred_labels/{texts_name}_labels.csv"
+            datapath = f"data/inferred_labels/{texts_name}_labels.csv"
     data.to_csv(datapath, index=False)
 
 
@@ -361,30 +407,40 @@ if __name__ == "__main__":
         "prostate_cancer_nat_rem",
         "std_nat_rem",
         "weight_loss_nat_rem",
+        # "training_set",
     ]
 
     # Set to False is not the multilabel training set.
     multilabel = True
 
-    if mode == "train":
-        # Fine-tune a new model:
-        # _training_data = make_training_set()
-        _training_data = make_training_set_multi_label()
-        _training_data.to_json(
-            "data/multi_label_training_v1.json", orient="records", lines=True
-        )
-        tuning("cj_tuned_multi_label_0", _training_data)
+    for intro_name in intro_names.keys():
 
-    if mode == "infer":
-        model = get_model_by_display_name("cj_tuned_multi_label_0")
+        # intro_name = "factchecker"
+        intro = intro_names[intro_name]
 
-        for texts in texts_list:
-            some_captions = youtube_api.load_texts(texts)
+        if mode == "train":
+            # Fine-tune a new model:
+            # _training_data = make_training_set()
+            _training_data = make_training_set_multi_label()
+            _training_data.to_json(
+                "data/multi_label_training_v1.json", orient="records", lines=True
+            )
+            tuning("cj_tuned_multi_label_0", _training_data)
 
-            all_responses = []
-            for captions in some_captions[0:15]:
-                chunks = youtube_api.form_chunks(captions)
-                all_responses += get_video_responses(model, chunks, multilabel)
-            print("\n\n")
-            save_all_responses(all_responses, texts, multilabel)
-            pretty_format_responses(all_responses, multilabel)
+        if mode == "infer":
+            model = get_model_by_display_name("cj_tuned_multi_label_0")
+
+            for texts in texts_list:
+                some_captions = youtube_api.load_texts(texts)
+
+                all_responses = []
+                for captions in some_captions[0:15]:
+                    chunks = youtube_api.form_chunks(captions)
+                    all_responses += get_video_responses(
+                        model, chunks, intro, multilabel
+                    )
+                print("\n\n")
+                save_all_responses(
+                    all_responses, texts, multilabel, intro_name=intro_name
+                )
+                pretty_format_responses(all_responses, multilabel)
