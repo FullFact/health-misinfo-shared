@@ -13,7 +13,7 @@ import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
 
-from health_misinfo_shared.health_misinfo_shared.prompts import (
+from health_misinfo_shared.prompts import (
     HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
     HEALTH_TRAINING_EXPLAIN_PROMPT,
@@ -28,6 +28,7 @@ from health_misinfo_shared.health_misinfo_shared.prompts import (
     SPY_INTRO,
 )
 from health_misinfo_shared import youtube_api
+from health_misinfo_shared.find_claims_within_captions import parse_model_json_output
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
@@ -39,13 +40,13 @@ UNCHECKWORTHY_EXPLANATIONS = ["nothing to check", "hedged claim"]
 VALID_EXPLANATIONS = CHECKWORTHY_EXPLANATIONS + UNCHECKWORTHY_EXPLANATIONS
 
 intro_names = {
-    # "factchecker": FACTCHECKER_INTRO,
-    # "tabloid": TABLOID_INTRO,
+    "factchecker": FACTCHECKER_INTRO,
+    "tabloid": TABLOID_INTRO,
     "broadsheet": BROADSHEET_INTRO,
-    # "undergrad": UNDERGRAD_INTRO,
-    # "academic": ACADEMIC_INTRO,
-    # "antivax": ANTIVAX_INTRO,
-    # "spy": SPY_INTRO,
+    "undergrad": UNDERGRAD_INTRO,
+    "academic": ACADEMIC_INTRO,
+    "antivax": ANTIVAX_INTRO,
+    "spy": SPY_INTRO,
 }
 
 
@@ -294,19 +295,19 @@ def get_video_responses(
         response = model.predict(prompt, **parameters)
         for candidate in response.candidates:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
-            # try:
-            if len(str(candidate.text)) > 0:
-                print(candidate.safety_attributes)
-                json_text = candidate.text
-                print("JSON output:  ", json_text)
-                formatted_response = {
-                    "claim": json.loads(candidate.text),
-                    "chunk": chunk,
-                    "safety": candidate.safety_attributes,
-                }
-                all_responses.append(formatted_response)
-            # except Exception as e:
-            #     print("*** problem handling output? *** ", e)
+            try:
+                if len(str(candidate.text)) > 0:
+                    print(candidate.safety_attributes)
+                    json_text = candidate.text
+                    print("JSON output:  ", json_text)
+                    formatted_response = {
+                        "claim": parse_model_json_output(candidate.text),
+                        "chunk": chunk,
+                        "safety": candidate.safety_attributes,
+                    }
+                    all_responses.append(formatted_response)
+            except Exception as e:
+                print("*** problem handling output? *** ", e)
         print("=" * 80)
     return all_responses
 
@@ -419,7 +420,6 @@ if __name__ == "__main__":
 
     for intro_name in intro_names.keys():
 
-        # intro_name = "factchecker"
         intro = intro_names[intro_name]
 
         if mode == "train":
@@ -444,17 +444,15 @@ if __name__ == "__main__":
         # print("\n\n")
         # pretty_format_responses(all_responses)
 
-        for texts in texts_list[0:2]:
-                some_captions = youtube_api.load_texts(texts)
+        for texts in texts_list[0:5]:
+            some_captions = youtube_api.load_texts(texts)
 
-                all_responses = []
-                for captions in some_captions[0:5]:
-                    chunks = youtube_api.form_chunks(captions)
-                    all_responses += get_video_responses(
-                        model, chunks, intro, multilabel
-                    )
-                print("\n\n")
-                # save_all_responses(
-                    all_responses, texts, multilabel, intro_name=intro_name
+            all_responses = []
+            for captions in some_captions[0:5]:
+                chunks = youtube_api.form_chunks(captions)
+                all_responses += get_video_responses(
+                    model, chunks, intro=None, multilabel=multilabel
                 )
-                pretty_format_responses(all_responses, multilabel)
+            print("\n\n")
+            save_all_responses(all_responses, texts, multilabel, intro_name=None)
+            pretty_format_responses(all_responses, multilabel)
