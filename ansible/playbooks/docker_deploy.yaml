@@ -1,0 +1,53 @@
+---
+- hosts: localhost
+  connection: local
+  vars:
+    pwd: "{{ lookup('env', 'PWD') }}"
+
+  tasks:
+    - name: Build the Docker images
+      command:
+        cmd: podman-compose build
+        chdir: "{{ pwd }}"
+
+    - name: Save Docker images to tarballs
+      command:
+        cmd: docker save -o frontend.tar raphael/frontend:latest
+        chdir: "{{ lookup('env', 'PWD') }}"
+
+    - name: Save Docker images to tarballs
+      command:
+        cmd: docker save -o backend.tar raphael/backend:latest
+        chdir: "{{ lookup('env', 'PWD') }}"
+              
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Create temporary directory
+      tempfile:
+        state: directory
+        suffix: host
+      register: host_image_dir
+
+    - name: Copy Docker images
+      copy:
+        src: "{{pwd}}frontend.tar"
+        dest: "{{host_image_dir}}/"
+
+    - name: Copy Docker images
+      copy:
+        src: "{{pwd}}/backend.tar"
+        dest: "{{host_image_dir}}/"
+
+    - name: Load Docker images
+      command: docker load -i {{ host_image_dir }}/frontend.tar
+    - command: docker load -i {{ host_image_dir }}/backend.tar
+
+    - name: Copy Compose file
+      copy:
+        src: compose.yaml
+        dest: compose.yaml
+
+    - name: Run docker-compose up
+      command: docker-compose restart -d
