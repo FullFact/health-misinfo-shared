@@ -1,0 +1,17 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY poetry.lock pyproject.toml ./
+
+RUN pip install poetry gunicorn
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi --no-root
+
+COPY src/raphael_backend_flask/ ./
+
+EXPOSE 3000
+
+ENV FLASK_APP=app.py
+ENV FLASK_ENV=production
+CMD ["gunicorn", "-b", "0.0.0.0:3000", "-w", "2", "app:app"]
