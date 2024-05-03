@@ -8,6 +8,8 @@ import pandas as pd
 from google.auth import default
 import vertexai
 from vertexai.language_models import TextGenerationModel
+from vertexai.generative_models import GenerativeModel
+import vertexai.preview.generative_models as generative_models
 from vertexai.preview.language_models import TuningEvaluationSpec
 
 from health_misinfo_shared.prompts import (
@@ -172,48 +174,62 @@ def make_training_set_explanation() -> pd.DataFrame:
     return training_data_final_df
 
 
-def make_training_set_multi_label() -> pd.DataFrame:
+def make_training_set_multi_label(
+    annotated_files: list[str], include_prompt=True
+) -> pd.DataFrame:
     """
     Same as function above, but uses multi label training data.
     This will fail if labelled data is not multi-label, using the labels below.
+    Reads list of CSV files and merges into a dataframe.
+    If include_prompt is True, then prepend an appropriate prompt to the input text.
+    Set to false for in-context learning, where we don't want to repeat the prompt with every example.
     """
-    training_data = pd.read_csv("data/multi_label_training_v1.csv")
-    training_data.columns = [
-        "output_text",
-        "input_text",
-        "understandability",
-        "type_of_claim",
-        "type_of_medical_claim",
-        "support",
-        "harm",
-    ]
+    # training_data = pd.read_csv("data/multi_label_training_v1.csv")
 
     training_data_final = []
-    grps = training_data.groupby("input_text")
-    for input_text, grp in grps:
-
-        this_input = prepend_prompt(input_text, HEALTH_TRAINING_MULTI_LABEL_PROMPT)
-        # for index, row in grp.iterrows():
-        #     assert row["explanation"] in VALID_EXPLANATIONS
-        this_output = [
-            {
-                "claim": row["output_text"],
-                "labels": {
-                    "understandability": row["understandability"],
-                    "type_of_claim": row["type_of_claim"],
-                    "type_of_medical_claim": row["type_of_medical_claim"],
-                    "support": row["support"],
-                    "harm": row["harm"],
-                },
-            }
-            for index, row in grp.iterrows()
+    for fn in annotated_files:
+        training_data = pd.read_csv(fn)
+        training_data.columns = [
+            "output_text",
+            "input_text",
+            "understandability",
+            "type_of_claim",
+            "type_of_medical_claim",
+            "support",
+            "harm",
         ]
-        this_row = {
-            "input_text": this_input,
-            "output_text": this_output,
-        }
-        # Maximum input tokens: 8192
-        training_data_final.append(this_row)
+        grps = training_data.groupby("input_text")
+
+        for input_text, grp in grps:
+            if include_prompt:
+                this_input = prepend_prompt(
+                    input_text, HEALTH_TRAINING_MULTI_LABEL_PROMPT
+                )
+            else:
+                this_input = input_text
+            # for index, row in grp.iterrows():
+            #     assert row["explanation"] in VALID_EXPLANATIONS
+            this_output = [
+                {
+                    "claim": row["output_text"],
+                    "labels": {
+                        "understandability": row.get("understandability", "vague"),
+                        "type_of_claim": row.get("type_of_claim", "not a claim"),
+                        "type_of_medical_claim": row.get(
+                            "type_of_medical_claim", "not medical"
+                        ),
+                        "support": row.get("support", "can't tell"),
+                        "harm": row.get("harm", "can't tell"),
+                    },
+                }
+                for index, row in grp.iterrows()
+            ]
+            this_row = {
+                "input_text": this_input,
+                "output_text": this_output,
+            }
+            # Maximum input tokens: 8192
+            training_data_final.append(this_row)
 
     training_data_final_df = pd.DataFrame(training_data_final)
     return training_data_final_df
@@ -246,7 +262,9 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
     print(f"Model '{display_name}' not found")
 
 
-def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> None:
+def get_video_responses(
+    model, chunks: list[str], multilabel: bool = False, in_context_examples: str = ""
+) -> None:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
     infer_prompt = (
@@ -254,6 +272,10 @@ def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> N
         if multilabel
         else HEALTH_TRAINING_EXPLAIN_PROMPT
     )
+    if len(in_context_examples) > 0:
+        infer_prompt += (
+            "\nHere are some examples to learn from:\n" + in_context_examples
+        )
     all_responses = []
 
     for chunk in chunks:
@@ -267,7 +289,21 @@ def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> N
             "temperature": 0,
             "top_p": 1,
         }
-        response = model.predict(prompt, **parameters)
+        # Set saftey to filter as little as possible
+        safety_settings = {
+            generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        }
+        if len(in_context_examples) == 0:
+            response = model.predict(prompt, **parameters)
+        else:
+            response = model.generate_content(
+                [prompt],
+                generation_config=parameters,
+                safety_settings=safety_settings,
+            )
         for candidate in response.candidates:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
             try:
@@ -278,7 +314,7 @@ def get_video_responses(model, chunks: list[str], multilabel: bool = False) -> N
                     formatted_response = {
                         "response": json.loads(json_text),
                         "chunk": chunk,
-                        "safety": candidate.safety_attributes,
+                        # "safety": candidate.safety_attributes,
                     }
                     all_responses.append(formatted_response)
             except Exception as e:
@@ -303,10 +339,13 @@ def pretty_format_responses(responses, multilabel: bool = False):
         print("=" * 80)
 
 
-def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
+def save_all_responses(
+    responses, texts_name, multilabel: bool = False, folder: str = "labels"
+) -> None:
     """
     Export responses to a csv. Format depends on if a multilabel response or not.
     """
+    # TODO: check directory exists (& create it) before writing
     claims, chunks = [], []
     if multilabel:
         understandable, type_of_claim, med_type = [], [], []
@@ -315,20 +354,20 @@ def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
         explanations = []
 
     for response in responses:
-        if len(response.get("claim", [])) > 0:
-            for claim in response.get("claim", []):
-                claims.append(claim.get("claim"))
-                chunks.append(response.get("chunk"))
-                if multilabel:
-                    labels = claim.get("labels")
-                    understandable.append(labels.get("understandability"))
-                    type_of_claim.append(labels.get("type_of_claim"))
-                    med_type.append(labels.get("type_of_medical_claim"))
-                    support.append(labels.get("support"))
-                    harm.append(labels.get("harm"))
-                    summary.append(labels.get("summary"))
-                else:
-                    explanations.append(claim.get("explanation"))
+        # if len(response.get("claim", [])) > 0:
+        for claim in response.get("response", []):
+            claims.append(claim.get("claim"))
+            chunks.append(response.get("chunk"))
+            if multilabel:
+                labels = claim.get("labels")
+                understandable.append(labels.get("understandability"))
+                type_of_claim.append(labels.get("type_of_claim"))
+                med_type.append(labels.get("type_of_medical_claim"))
+                support.append(labels.get("support"))
+                harm.append(labels.get("harm"))
+                summary.append(labels.get("summary"))
+            else:
+                explanations.append(claim.get("explanation"))
     if multilabel:
         data = pd.DataFrame(
             {
@@ -342,7 +381,7 @@ def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
                 "summary": summary,
             }
         )
-        datapath = f"data/inferred_labels/multilabel_v1/{texts_name}_labels.csv"
+        datapath = f"data/inferred_labels/{folder}/{texts_name}_labels.csv"
     else:
         data = pd.DataFrame(
             {"chunk": chunks, "claim": claims, "explanation": explanations}
@@ -353,7 +392,7 @@ def save_all_responses(responses, texts_name, multilabel: bool = False) -> None:
 
 if __name__ == "__main__":
     # TODO: add simple command line options to fine-tune or load/use a model or evaluate
-    mode = "infer"
+    mode = "in_context"
 
     texts_list = [
         "acne_nat_rem",
@@ -371,11 +410,58 @@ if __name__ == "__main__":
     if mode == "train":
         # Fine-tune a new model:
         # _training_data = make_training_set()
-        _training_data = make_training_set_multi_label()
+        _training_data = make_training_set_multi_label(
+            ["data/multi_label_training_v1.csv"]
+        )
         _training_data.to_json(
             "data/multi_label_training_v1.json", orient="records", lines=True
         )
         tuning("cj_tuned_multi_label_0", _training_data)
+
+    if mode == "in_context":
+        _training_data = make_training_set_multi_label(
+            ["data/MVP_labelled_claims_4.csv"], include_prompt=False
+        )
+
+        model = GenerativeModel("gemini-1.5-pro-preview-0409")
+
+        examples = ""
+        for _id, eg in _training_data.head(70).iterrows():
+            examples += f"Input: {eg['input_text']}\n"
+            target = eg["output_text"]
+            for t in target:
+                # summary should be one of "not worth checking", "worth checking", "may be worth checking"
+                # TODO: improve logic here. E.g. use an internal score, so 'citation' adds 1, 'high harm' adds 2, 'low harm' adds 1 etc.
+                # then map back to label
+                t["labels"]["summary"] = "not worth checking"  # default
+                if t["labels"]["support"] in ["widely discredited"]:
+                    t["labels"]["summary"] = "worth checking"
+                if t["labels"]["harm"] in ["high harm", "some harm"]:
+                    t["labels"]["summary"] = "worth checking"
+                if t["labels"]["harm"] in ["low harm", "indirect harm"]:
+                    t["labels"]["summary"] = "may be worth checking"
+
+            examples += f"Output: {target}\n"
+
+        # prompt = (
+        #     HEALTH_INFER_MULTI_LABEL_PROMPT
+        #     + "\nHere are some examples for you to learn from:\n"
+        #     + examples
+        # )
+        # print(prompt)
+
+        for texts in texts_list[0:4]:
+            some_captions = youtube_api.load_texts(texts)
+
+            all_responses = []
+            for captions in some_captions[0:5]:
+                chunks = youtube_api.form_chunks(captions)
+                all_responses += get_video_responses(
+                    model, chunks, multilabel, in_context_examples=examples
+                )
+            print("\n\n")
+            save_all_responses(all_responses, texts, multilabel, folder="ICL")
+            pretty_format_responses(all_responses, multilabel)
 
     if mode == "infer":
         model = get_model_by_display_name("cj_tuned_multi_label_0")

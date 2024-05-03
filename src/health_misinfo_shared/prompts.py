@@ -67,7 +67,7 @@ HEALTH_TRAINING_EXPLAIN_PROMPT = """
                 Give the explanation "high harm" if the claim is likely to cause serious injury.
                 Give the explanation "low harm" if the claim is likely to cause minor injury.
                 Give the explanation "citation" if the claim cites scientific work in a misleading way.
-                Give the explanation "nothing to check" if the claim is true or harmless or cannit be understood.
+                Give the explanation "nothing to check" if the claim is true or harmless or cannot be understood.
                 Give the explanation "hedged claim" if the claim is vague or imprecise.    
             4 - Return a list of JSON format output as follows:
             [
