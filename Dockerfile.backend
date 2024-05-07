@@ -9,9 +9,12 @@ RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --no-root
 
 COPY src/raphael_backend_flask/ ./
+COPY .env.backend ./.env
+RUN mkdir data
 
 EXPOSE 3000
 
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
+ENV DB_PATH=/app/data/database.db
 CMD ["gunicorn", "-b", "0.0.0.0:3000", "-w", "2", "app:app"]

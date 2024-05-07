@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 from os.path import isfile
 from typing import Any
@@ -6,8 +9,9 @@ from sqlite3 import Connection, Row
 
 from flask import Flask, redirect, request, jsonify, g, url_for
 from flask.typing import ResponseReturnValue
-from flask_httpauth import HTTPDigestAuth
+from flask_httpauth import HTTPBasicAuth
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import create_database
 from vertex import process_video
@@ -18,21 +22,20 @@ DB_PATH = os.getenv("DB_PATH", "database.db")
 app = Flask(__name__)
 CORS(app)
 
-app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
-
-auth = HTTPDigestAuth()
+auth = HTTPBasicAuth()
 
 users = {
-    user: password for user, password in (
+    user: generate_password_hash(password) for user, password in (
         item.split(":") for item in os.environ["USERS"].split(",")
     )
 }
 
 
-@auth.get_password
-def get_password(user: str) -> str | None:
-    return users.get(user)
 
+@auth.verify_password
+def verify_password(username: str, password: str) -> str | None:
+    if username in users and check_password_hash(users.get(username), password):
+        return username
 
 def get_db_connection() -> Connection:
     conn = g.get("_database")
