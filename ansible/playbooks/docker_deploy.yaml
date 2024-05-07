@@ -1,25 +1,32 @@
 ---
 - hosts: localhost
   connection: local
-  vars:
-    pwd: "{{ lookup('env', 'PWD') }}"
 
   tasks:
-    - name: Build the Docker images
+    - name: Build Docker image
       command:
-        cmd: podman-compose build
-        chdir: "{{ pwd }}"
+        cmd: docker build -t raphael/{{item}}:latest -f Dockerfile.{{item}}
+        chdir: "{{pwd}}"
+      loop:
+        - frontend
+        - backend
 
-    - name: Save Docker images to tarballs
-      command:
-        cmd: docker save -o frontend.tar raphael/frontend:latest
-        chdir: "{{ lookup('env', 'PWD') }}"
+    - name: Delete tarball if exists
+      file:
+        path: "{{pwd}}/{{item}}.tar"
+        state: absent
+      loop:
+        - frontend
+        - backend
 
-    - name: Save Docker images to tarballs
+    - name: Save Docker image to tarball
       command:
-        cmd: docker save -o backend.tar raphael/backend:latest
-        chdir: "{{ lookup('env', 'PWD') }}"
-              
+        cmd: docker save raphael/{{item}}:latest -o {{item}}.tar
+        chdir: "{{pwd}}"
+      loop:
+        - frontend
+        - backend
+
 - hosts: all
   become: true
 
@@ -32,22 +39,27 @@
 
     - name: Copy Docker images
       copy:
-        src: "{{pwd}}frontend.tar"
-        dest: "{{host_image_dir}}/"
-
-    - name: Copy Docker images
-      copy:
-        src: "{{pwd}}/backend.tar"
-        dest: "{{host_image_dir}}/"
+        src: "{{pwd}}/{{item}}.tar"
+        dest: "{{host_image_dir.path}}/"
+      loop:
+        - frontend
+        - backend
 
     - name: Load Docker images
-      command: docker load -i {{ host_image_dir }}/frontend.tar
-    - command: docker load -i {{ host_image_dir }}/backend.tar
+      command: "docker load -i \"{{host_image_dir.path }}/{{item}}.tar\""
+      loop:
+        - frontend
+        - backend
+
+    - name: Delete temporary directory
+      file:
+        path: "{{host_image_dir.path}}"
+        state: absent
 
     - name: Copy Compose file
       copy:
-        src: compose.yaml
+        src: "{{pwd}}/compose.yaml"
         dest: compose.yaml
 
     - name: Run docker-compose up
-      command: docker-compose restart -d
+      command: docker-compose up -d --force-recreate

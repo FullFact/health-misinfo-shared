@@ -1,18 +1,12 @@
 version: '3'
 services:
   raphael_frontend_react:
-    image: raphael/frontend
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: localhost/raphael/frontend
     ports:
       - "4000:80"
 
   raphael_backend_flask:
-    image: raphael/backend
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: localhost/raphael/backend
     environment:
       - DB_PATH=/app/data/database.db
     volumes:
