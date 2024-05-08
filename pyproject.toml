@@ -21,6 +21,7 @@ structlog = "^23.1.0"
 pydantic = ">1.7"
 google-cloud-aiplatform = "^1.38"
 pandas = "1.5"
+scikit-learn = ">=1.4"
 
 # For youtube access:
 google-api-python-client="^2.118.0"
@@ -39,6 +40,7 @@ mypy = ">0.9"
 pre-commit = "^3.3.3"
 pytest = "^7.4.0"
 pytest-asyncio = "^0.21.1"
+rouge-score = ">0.1"
 
 [tool.pytest.ini_options]
 pythonpath = "src"
@@ -49,6 +51,7 @@ filterwarnings = [
     # "ignore:Call to deprecated function _.*:schematics.deprecated.SchematicsDeprecationWarning", # Schematics internal warnings
     # "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
 ] # Ignore some noisy and unfixable warnings
+
 
 [tool.isort]
 profile = "black"
