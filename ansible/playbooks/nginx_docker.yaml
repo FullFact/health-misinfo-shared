@@ -3,8 +3,19 @@
   become: true
   vars:
     nginx_conf_path: /etc/nginx/sites-available/reverse-proxy.conf
-    ssl_cert_path: /etc/ssl/certs/nginx.crt
-    ssl_key_path: /etc/ssl/private/nginx.key
+    ssl_cert_path: /etc/letsencrypt/live/raphael.fullfact.org/fullchain.pem
+    ssl_key_path: /etc/letsencrypt/live/raphael.fullfact.org/privkey.pem
+
+    certbot_create_if_missing: true
+    certbot_admin_email: afc@fullfact.org
+    certbot_certs:
+      - domains:
+          - raphael.fullfact.org
+    certbot_create_standalone_stop_services:
+      - nginx
+
+  roles:
+    - geerlingguy.certbot
 
   tasks:
     - name: Install prerequisites
@@ -34,16 +45,6 @@
           - docker-ce-rootless-extras
           - docker-compose-plugin
         update_cache: true
-
-    - name: Create RSA private key
-      community.crypto.openssl_privatekey:
-        path: "{{ssl_key_path}}"
-
-    - name: Create self-signed SSL certificate (for testing)
-      community.crypto.x509_certificate:
-        path: "{{ssl_cert_path}}"
-        privatekey_path: "{{ssl_key_path}}"
-        provider: selfsigned
 
     - name: Install Nginx
       apt:
