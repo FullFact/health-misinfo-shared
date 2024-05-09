@@ -180,7 +180,8 @@ def get_transcript_status(id: str) -> ResponseReturnValue:
 @app.delete("/api/transcripts/<string:id>")
 @auth.login_required
 def delete_transcript(id: str) -> ResponseReturnValue:
-    execute_sql("DELETE FROM video_transcripts WHERE id = ?", (id,))
+    video_id = extract_youtube_id(id)
+    execute_sql("DELETE FROM video_transcripts WHERE id = ?", (video_id,))
     return "", 204
 
 
@@ -203,20 +204,22 @@ def create_training_claim() -> ResponseReturnValue:
 @app.get("/api/training_claims/<string:id>")
 @auth.login_required
 def get_training_claims(id: str) -> ResponseReturnValue:
-    claims = execute_sql("SELECT * FROM training_claims WHERE video_id = ?", (id,))
+    video_id = extract_youtube_id(id)
+    claims = execute_sql("SELECT * FROM training_claims WHERE video_id = ?", (video_id,))
     return jsonify([{**c} for c in claims]), 200
 
 
 @app.get("/api/training_claims/<string:id>/status")
 @auth.login_required
 def get_training_claims_status(id: str) -> ResponseReturnValue:
-    return redirect(url_for("get_transcript_status"))
+    return redirect(url_for("get_transcript_status", id=id))
 
 
 @app.delete("/api/training_claims/<string:id>")
 @auth.login_required
 def delete_training_claim(id: str) -> ResponseReturnValue:
-    execute_sql("DELETE FROM training_claims WHERE id = ?", (id,))
+    video_id = extract_youtube_id(id)
+    execute_sql("DELETE FROM training_claims WHERE id = ?", (video_id,))
     return "", 204
 
 
@@ -240,7 +243,8 @@ def create_inferred_claim() -> ResponseReturnValue:
 @app.get("/api/inferred_claims/<string:id>")
 @auth.login_required
 def get_inferred_claims(id: str) -> ResponseReturnValue:
-    claims = execute_sql("SELECT * FROM inferred_claims WHERE video_id = ?", (id,))
+    video_id = extract_youtube_id(id)
+    claims = execute_sql("SELECT * FROM inferred_claims WHERE video_id = ?", (video_id,))
     return jsonify([{**c} for c in claims]), 200
 
 
@@ -253,7 +257,8 @@ def get_inferred_claims_status(id: str) -> ResponseReturnValue:
 @app.delete("/api/inferred_claims/<string:id>")
 @auth.login_required
 def delete_inferred_claim(id: str) -> ResponseReturnValue:
-    execute_sql("DELETE FROM inferred_claims WHERE id = ?", (id,))
+    video_id = extract_youtube_id(id)
+    execute_sql("DELETE FROM inferred_claims WHERE id = ?", (video_id,))
     return "", 204
 
 
