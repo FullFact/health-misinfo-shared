@@ -161,3 +161,10 @@ cython_debug/
 
 # UI
 node_modules
+
+data/*
+!data/train_data_v2.json
+!data/training_set_v2.csv
+!data/training_set.csv
+!data/captions/README.md
+.vscode/launch.json

@@ -8,7 +8,9 @@
 import os
 import re
 import json
+import string
 from pathlib import Path
+from typing import Iterator
 import requests
 from langdetect import detect
 import google_auth_oauthlib.flow
@@ -36,7 +38,11 @@ def mostly_english(sentences):
     return en_count > (0.5 * len(sentences))
 
 
-def get_captions(video_id: str) -> dict:
+def get_captions(
+    video_id: str,
+    video_title: str | None = None,
+    query: str | None = None,
+) -> dict:
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     r = requests.get(video_url, allow_redirects=False, timeout=60)
     merged_transcripts = {}
@@ -56,6 +62,8 @@ def get_captions(video_id: str) -> dict:
             )
             transcript = {
                 "video_id": video_id,
+                "video_title": video_title,
+                "search_query": query,
                 "sentences": [clean_str(m.groupdict()) for m in pat.finditer(r.text)],
             }
             if mostly_english(transcript["sentences"]) or len(merged_transcripts) == 0:
@@ -82,7 +90,7 @@ def load_captions(video_id: str, folder) -> dict:
 
 def load_texts(folder) -> list[dict]:
     """Reload captions from given local file cache for a query and form
-    a simple list of sentences"""
+    a list of sentences with text, start-time and video-id"""
     flat_list = []
     for filename in os.listdir(f"data/captions/{folder}"):
         vid_cap = load_captions(filename.replace(".json", ""), folder)
@@ -96,7 +104,7 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript_obj: dict) -> list[str]:
+def form_chunks(transcript_obj: dict) -> Iterator[str]:
     """Split/merged a list of sentences into series of overlapping text chunks."""
     current_chunk_text = ""
     for s in transcript_obj:
@@ -110,13 +118,18 @@ def form_chunks(transcript_obj: dict) -> list[str]:
     yield current_chunk_text
 
 
-def download_captions(video_id: str, folder: str) -> None:
+def download_captions(
+    video_id: str,
+    folder: str,
+    video_title: str | None = None,
+    query: str | None = None,
+) -> None:
     """Check if transcript for this video already exists in this folder.
     If not, try and download it there."""
     existing_captions = load_captions(video_id, folder)
     already_exists = len(existing_captions.get("sentences", [])) > 0
     if not already_exists:
-        captions = get_captions(video_id)
+        captions = get_captions(video_id, video_title=video_title, query=query)
         if captions:
             target_dir = f"data/captions/{folder}"
             Path(target_dir).mkdir(parents=True, exist_ok=True)
@@ -125,7 +138,7 @@ def download_captions(video_id: str, folder: str) -> None:
                 "wt",
                 encoding="utf-8",
             ) as fout:
-                json.dump(captions, fout)
+                json.dump(captions, fout, indent=4)
     else:
         print(
             f"Already had {len(existing_captions.get('sentences', []))} sentences from {video_id}"
@@ -168,13 +181,15 @@ def search_for_captions(query: str, folder: str):
         videoCaption="closedCaption",
         relevanceLanguage="en",
         safeSearch="none",
+        # topicId="/m/0kt51,/m/019_rr",
     )
     response = request.execute()
 
     for video in response["items"]:
         video_id = video.get("id").get("videoId")
-        print(video.get("snippet", {}).get("title"))
-        download_captions(video_id, folder)
+        video_title = video.get("snippet", {}).get("title")
+        print(video_title)
+        download_captions(video_id, folder, video_title=video_title, query=query)
 
 
 def download_captions_of_known_bad_health_vids():
@@ -194,22 +209,94 @@ def download_captions_of_known_bad_health_vids():
         download_captions(video_id, "known_bad")
 
 
-def mutli_issue_search():
+def query_to_filename(query: str) -> str:
+    to_keep = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+    return "".join(filter(lambda x: x in to_keep, query.replace(" ", "_")))
+
+
+def multi_issue_search():
     """Collect a fairly random set of videos across a range of health topics"""
-    issues = [
+    conditions = [
         "HPV",
         "ADHD",
         "prostate cancer",
         "acne",
         "weight loss",
         "heart disease",
-        "std",
+        "STD",
+        "STI",
+        "menopause",
+        "eating disorders",
+        "HIV",
+        "AIDS",
+        "pregnancy",
+        "cancer",
+        "anorexia",
+        "bulimia",
+        "proana",
+        "promia",
+        "diabetes",
+        "epilepsy",
+        "hypertension",
+        "H1N1",
+        "Zika",
+        "Ebola",
+        "psoriasis",
     ]
-    for issue in issues:
-        query = f'{issue} "natural remedy"'
-        folder = issue.replace(" ", "_") + "_nat_rem"
-        search_for_captions(query, folder)
+
+    things = [
+        "vaping",
+        "smoking",
+        "vaccines",
+        "dieting",
+        "marijuana",
+        "Ozempic",
+        "opioids",
+        "chiropracty",
+        "homeopathy",
+        "Oxycodene",
+        "Oxycontin",
+        "Percocet",
+        "MMR",
+        "BMI",
+    ]
+
+    universal_queries = [
+        '"We\'ve all been wrong about" {keyword}',
+        '"your doctor doesn\'t want you to know about" {keyword}',
+        '"your doctor isn\'t telling you about" {keyword}',
+        '"your doctor doesn\'t tell you about" {keyword}',
+        '{keyword} "secrets revealed"',
+        '"The shocking truth behind" {keyword}',
+        '"The truth about" {keyword}',
+        '"we don’t talk about" {keyword}',
+        '"we’ve all been wrong about" {keyword}',
+        "{keyword} exposed",
+    ]
+
+    conditions_queries = [
+        '{keyword} "natural remedies"',
+        '"The real cure for" {keyword}',
+        '{keyword} "hacks"',
+    ]
+
+    things_queries = [
+        '{keyword} "for a month. Here\'s what happened"',
+    ]
+
+    for keyword in conditions:
+        folder = query_to_filename(keyword)
+        for phrase in universal_queries + conditions_queries:
+            query = phrase.format(keyword=keyword)
+            search_for_captions(query, folder)
+
+    for keyword in things:
+        folder = query_to_filename(keyword)
+        for phrase in universal_queries + things_queries:
+            query = phrase.format(keyword=keyword)
+            search_for_captions(query, folder)
 
 
 if __name__ == "__main__":
-    mutli_issue_search()
+    multi_issue_search()
+    print()
