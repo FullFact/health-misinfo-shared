@@ -61,5 +61,5 @@
         src: "{{pwd}}/compose.yaml"
         dest: compose.yaml
 
-    - name: Run docker-compose up
-      command: docker-compose up -d --force-recreate
+    - name: Run docker compose up
+      command: docker compose up -d --force-recreate
