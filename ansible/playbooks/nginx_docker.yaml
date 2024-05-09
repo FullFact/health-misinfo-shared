@@ -69,6 +69,10 @@
               ssl_certificate {{ ssl_cert_path }};
               ssl_certificate_key {{ ssl_key_path }};
 
+              location ~ ^/api {
+                  proxy_pass http://127.0.0.1:3000;
+              }
+
               location / {
                   proxy_pass http://127.0.0.1:4000;
                   proxy_set_header Host $host;
