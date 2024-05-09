@@ -38,13 +38,9 @@ caption_re = re.compile(
 )
 
 
-def download_captions(video_id: str) -> list[dict]:
-    video_url = f"https://www.youtube.com/watch?v={video_id}"
-    with requests.get(video_url, allow_redirects=False, timeout=60) as resp:
-        youtube_xml = resp.text
-
+def download_captions(html: str) -> list[dict]:
     # only find URLs with lang=en
-    urls = urls_re.findall(youtube_xml)
+    urls = urls_re.findall(html)
     if not len(urls):
         raise Exception
 
@@ -55,3 +51,14 @@ def download_captions(video_id: str) -> list[dict]:
 
     sentences = [clean_str(m.groupdict()) for m in caption_re.finditer(sentence)]
     return sentences
+
+
+title_re = re.compile("<title>(.*) - YouTube</title>")
+
+
+def extract_title(html: str) -> str:
+    titles = title_re.findall(html)
+    if not len(titles) == 1:
+        raise Exception
+
+    return titles[0]
