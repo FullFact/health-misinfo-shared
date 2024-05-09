@@ -156,7 +156,10 @@ def post_transcripts() -> ResponseReturnValue:
 @app.get("/api/transcripts/<string:id>")
 @auth.login_required
 def get_transcript(id: str) -> ResponseReturnValue:
-    transcripts = execute_sql("SELECT * FROM video_transcripts WHERE id = ?", (id,))
+    video_id = extract_youtube_id(id)
+    transcripts = execute_sql(
+        "SELECT * FROM video_transcripts WHERE id = ?", (video_id,)
+    )
     if transcripts:
         return jsonify(**transcripts[0]), 200
     return jsonify({"error": "transcript not found"}), 404
@@ -165,7 +168,10 @@ def get_transcript(id: str) -> ResponseReturnValue:
 @app.get("/api/transcripts/<string:id>/status")
 @auth.login_required
 def get_transcript_status(id: str) -> ResponseReturnValue:
-    transcripts = execute_sql("SELECT * FROM video_transcripts WHERE id = ?", (id,))
+    video_id = extract_youtube_id(id)
+    transcripts = execute_sql(
+        "SELECT * FROM video_transcripts WHERE id = ?", (video_id,)
+    )
     if transcripts:
         return jsonify({"status": transcripts[0]["status"]}), 200
     return jsonify({"error": "transcript not found"}), 404
