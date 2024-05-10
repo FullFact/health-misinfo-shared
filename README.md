@@ -33,10 +33,24 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 Run `python3 -m tools.db` to plonk database.db into the current directory. If any table already exists it will raise an Exception and quit.
 
+## Deploy/update a server
+
+Install Ansible. Install the necessary roles with `ansible-galaxy install -r ansible/requirements.yml`.
+
+Write the IP of the target server to a file, i.e. `hosts`:
+```
+<target host ip>
+```
+
+To deploy the backend, look at .env.backend.example and copy that to the .env.backend. Put in a user:pass everyone can know, or a couple.
+
+Run `ansible-playbook -i hosts ansible/playbooks/nginx_docker.yaml` to deploy the reverse proxy to that IP address. You will need SSH access to the host. This only needs to be done once.
+Run `ansible-playbook -i hosts ansible/playbooks/docker_deploy.yaml -e pwd=$PWD` to update and deploy the frontend and backend to that IP address. You will need SSH access to the host.
+
 ## Getting claims for YouTube captions
 
 For building a set of labelled data, we want to get health claims, without all the other stuff we're predicting.
 The `find_claims_within_captions.py` script takes our downloaded YouTube captions and asks Gemini to find all the claims contained within.
 
 > Note on Gemini 1.5: to use this version you have to specify `gemini-1.5-pro-preview-0409` rather than just `gemini-1.5-pro` like you would for 1.0.
-
+> 

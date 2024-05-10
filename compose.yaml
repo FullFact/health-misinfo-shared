@@ -1,0 +1,18 @@
+version: '3'
+services:
+  raphael_frontend_react:
+    image: localhost/raphael/frontend
+    ports:
+      - "4000:80"
+
+  raphael_backend_flask:
+    image: localhost/raphael/backend
+    environment:
+      - DB_PATH=/app/data/database.db
+    volumes:
+      - backend-data:/app/data
+    ports:
+      - "3000:3000"
+
+volumes:
+  backend-data:
