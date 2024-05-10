@@ -162,6 +162,7 @@ cython_debug/
 # UI
 node_modules
 
+# Data science
 data/*
 !data/train_data_v2.json
 !data/training_set_v2.csv
