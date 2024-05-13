@@ -18,7 +18,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 
 from db import create_database
-from vertex import process_video
+from health_misinfo_shared.vertex import process_video
 from youtube import download_captions, extract_title
 
 DB_PATH = os.getenv("DB_PATH", "database.db")
