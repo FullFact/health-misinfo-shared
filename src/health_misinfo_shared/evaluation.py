@@ -4,7 +4,7 @@ import csv
 from sklearn.metrics import precision_recall_fscore_support
 from rouge_score import rouge_scorer
 from vertexai.language_models import TextGenerationModel
-from health_misinfo_shared import fine_tuning
+from . import fine_tuning
 
 
 def closest_rouge(pred: str, targs: list[str]) -> float:

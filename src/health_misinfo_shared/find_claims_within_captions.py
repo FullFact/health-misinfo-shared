@@ -9,7 +9,7 @@ import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.generative_models import GenerativeModel, Part
 
-from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
+from .prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
 
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
