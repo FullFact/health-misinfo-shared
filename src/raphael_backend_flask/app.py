@@ -17,9 +17,9 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-from db import create_database
-from health_misinfo_shared.vertex import process_video
-from youtube import download_captions, extract_title
+from .db import create_database
+from .health_misinfo_shared.vertex import process_video
+from .youtube import download_captions, extract_title
 
 DB_PATH = os.getenv("DB_PATH", "database.db")
 
