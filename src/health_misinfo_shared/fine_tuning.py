@@ -390,6 +390,31 @@ def save_all_responses(
     data.to_csv(datapath, index=False)
 
 
+def construct_in_context_examples(data_filenames: list[str]) -> str:
+
+    _training_data = make_training_set_multi_label(data_filenames, include_prompt=False)
+    examples = ""
+    for _id, eg in _training_data.head(70).iterrows():
+        examples += f"Input: {eg['input_text']}\n"
+        target = eg["output_text"]
+        for t in target:
+            # summary should be one of "not worth checking", "worth checking", "may be worth checking"
+            # TODO: improve logic here. E.g. use an internal score, so 'citation' adds 1, 'high harm' adds 2, 'low harm' adds 1 etc.
+            # then map back to label
+
+            t["labels"]["summary"] = "not worth checking"  # default
+            if t["labels"]["support"] in ["widely discredited"]:
+                t["labels"]["summary"] = "worth checking"
+            if t["labels"]["harm"] in ["high harm", "some harm"]:
+                t["labels"]["summary"] = "worth checking"
+            if t["labels"]["harm"] in ["low harm", "indirect harm"]:
+                t["labels"]["summary"] = "may be worth checking"
+
+        examples += f"Output: {target}\n"
+
+    return examples
+
+
 if __name__ == "__main__":
     # TODO: add simple command line options to fine-tune or load/use a model or evaluate
     mode = "in_context"
@@ -419,37 +444,9 @@ if __name__ == "__main__":
         tuning("cj_tuned_multi_label_0", _training_data)
 
     if mode == "in_context":
-        _training_data = make_training_set_multi_label(
-            ["data/MVP_labelled_claims_4.csv"], include_prompt=False
-        )
 
         model = GenerativeModel("gemini-1.5-pro-preview-0409")
-
-        examples = ""
-        for _id, eg in _training_data.head(70).iterrows():
-            examples += f"Input: {eg['input_text']}\n"
-            target = eg["output_text"]
-            for t in target:
-                # summary should be one of "not worth checking", "worth checking", "may be worth checking"
-                # TODO: improve logic here. E.g. use an internal score, so 'citation' adds 1, 'high harm' adds 2, 'low harm' adds 1 etc.
-                # then map back to label
-                t["labels"]["summary"] = "not worth checking"  # default
-                if t["labels"]["support"] in ["widely discredited"]:
-                    t["labels"]["summary"] = "worth checking"
-                if t["labels"]["harm"] in ["high harm", "some harm"]:
-                    t["labels"]["summary"] = "worth checking"
-                if t["labels"]["harm"] in ["low harm", "indirect harm"]:
-                    t["labels"]["summary"] = "may be worth checking"
-
-            examples += f"Output: {target}\n"
-
-        # prompt = (
-        #     HEALTH_INFER_MULTI_LABEL_PROMPT
-        #     + "\nHere are some examples for you to learn from:\n"
-        #     + examples
-        # )
-        # print(prompt)
-
+        examples = construct_in_context_examples(["data/MVP_labelled_claims_4.csv"])
         for texts in texts_list[0:4]:
             some_captions = youtube_api.load_texts(texts)
 
