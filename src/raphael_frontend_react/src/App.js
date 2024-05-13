@@ -202,11 +202,11 @@ function App() {
         </div>
       ): (
         <div>
-          <h2>Find health misinformation claims in YouTube videos.</h2>
+          <h2>Find health misinformation in YouTube videos</h2>
           <form className="form" onSubmit={createTranscript}>
             <div className="input-group">
-                <input type="text" className="form-control" placeholder="Please enter a youtube url…" name="q" aria-label="Search" style={{marginRight: '12px'}} />
-                  <button type="submit" className="btn btn-brand-neutral-black" >Get Claims</button>
+                <input type="text" className="form-control" placeholder="Enter a YouTube URL" name="q" aria-label="Search" style={{marginRight: '12px'}} />
+                  <button type="submit" className="btn btn-brand-neutral-black" >Analyse</button>
             </div>
           </form>
           {transcript && searchCode?.length ? (
@@ -235,7 +235,7 @@ function App() {
             </div>
           ) : (
             <div>
-              <h6>Previous Searches</h6>
+              <h6>History</h6>
               <ul>
                 {recentTranscripts?.map(tr => (
                 <li key={tr.id}><a href={"?q="+tr.id} onClick={(e) => { handleSearchCode(e, tr.id)}}>{tr.title} ({tr.id})</a></li>
