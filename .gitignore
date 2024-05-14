@@ -169,3 +169,6 @@ data/*
 !data/training_set.csv
 !data/captions/README.md
 .vscode/launch.json
+
+# sqlite
+*.db
