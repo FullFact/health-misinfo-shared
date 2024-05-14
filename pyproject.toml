@@ -5,6 +5,10 @@ description = "Health misinformation from videos"
 authors = ["Full Fact","Google"]
 readme = "README.md"
 license = "Proprietary"
+packages = [
+    { include = "health_misinfo_shared", from = "src" },
+    { include = "raphael_backend_flask", from = "src" },
+]
 
 [build-system]
 requires = ["poetry-core"]

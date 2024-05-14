@@ -1,14 +1,13 @@
 # """Access Vertex AI platform"""
 
 import json
-import csv
 import vertexai
 
 from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
 
-from prompts import HEALTH_CLAIM_PROMPT, HEALTH_HARM_PROMPT
-from youtube import chunked_transcript
+from health_misinfo_shared.prompts import HEALTH_CLAIM_PROMPT
+from raphael_backend_flask.youtube import chunked_transcript
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
