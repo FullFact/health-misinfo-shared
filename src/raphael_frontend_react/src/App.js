@@ -2,7 +2,7 @@ import './App.css';
 import { useState } from "react";
 
 const conf = {
-  baseUrl: 'https://raphael.fullfact.org/api',
+  baseUrl: process.env.REACT_APP_BASE_URL || 'https://raphael.fullfact.org/api',
   defaultHeaders: {
     Accept: "application/json",
     "Content-Type": "application/json;charset=UTF-8"
