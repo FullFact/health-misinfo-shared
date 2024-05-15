@@ -2,7 +2,8 @@ import './App.css';
 import { useState } from "react";
 
 const conf = {
-  baseUrl: 'https://raphael.fullfact.org/api',
+  // baseUrl: 'https://raphael.fullfact.org/api',
+  baseUrl: `http://127.0.0.1:4000/api`, // i think this can be `${window.location.origin}`
   defaultHeaders: {
     Accept: "application/json",
     "Content-Type": "application/json;charset=UTF-8"

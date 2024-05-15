@@ -24,13 +24,28 @@ from youtube import download_captions, extract_title
 DB_PATH = os.getenv("DB_PATH", "database.db")
 
 app = Flask(__name__)
-CORS(app)
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": [
+                "http://raphael-frontend:4000",
+                "https://raphael.fullfact.org",
+                "http://raphael-frontend",
+                "http://127.0.0.1:4000",
+                "http://127.0.0.1",
+            ]
+        }
+    },
+)
 
 auth = HTTPBasicAuth()
 
 users = {
     user: generate_password_hash(password)
-    for user, password in (item.split(":") for item in os.environ["USERS"].split(","))
+    for user, password in (
+        item.split(":") for item in os.environ["USERS"].split(",") if item
+    )
 }
 
 
@@ -205,7 +220,9 @@ def create_training_claim() -> ResponseReturnValue:
 @auth.login_required
 def get_training_claims(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
-    claims = execute_sql("SELECT * FROM training_claims WHERE video_id = ?", (video_id,))
+    claims = execute_sql(
+        "SELECT * FROM training_claims WHERE video_id = ?", (video_id,)
+    )
     return jsonify([{**c} for c in claims]), 200
 
 
@@ -244,7 +261,9 @@ def create_inferred_claim() -> ResponseReturnValue:
 @auth.login_required
 def get_inferred_claims(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
-    claims = execute_sql("SELECT * FROM inferred_claims WHERE video_id = ?", (video_id,))
+    claims = execute_sql(
+        "SELECT * FROM inferred_claims WHERE video_id = ?", (video_id,)
+    )
     return jsonify([{**c} for c in claims]), 200
 
 

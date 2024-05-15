@@ -2,6 +2,9 @@ version: '3'
 services:
   raphael_frontend_react:
     image: localhost/raphael/frontend
+    depends_on:
+      - raphael_backend_flask
+    hostname: raphael-frontend
     ports:
       - "4000:80"
 
@@ -9,8 +12,10 @@ services:
     image: localhost/raphael/backend
     environment:
       - DB_PATH=/app/data/database.db
+      - GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
     volumes:
       - backend-data:/app/data
+    hostname: raphael-backend
     ports:
       - "3000:3000"
 
