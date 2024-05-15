@@ -14,3 +14,20 @@ Minimum requirement is a function called `call_api` which takes that input and g
 
 `prompt1.txt` is a file with the prompt text in.
 If we wanted multiple, I believe we can [separate them with ---](https://promptfoo.dev/docs/configuration/parameters#multiple-prompts-in-a-single-file).
+
+
+### To run
+> You'll need node.js installed for this to work.
+> I wrote instructions for that in the Google doc report, I'll move them here at some point.
+
+Make sure you're in the right environment and run this:
+
+```
+LOGLEVEL=debug npx promptfoo@latest eval
+```
+
+then to see a nice web interface for results, run this:
+
+```
+npx promptfoo@latest view
+```
