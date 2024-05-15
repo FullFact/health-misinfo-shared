@@ -390,11 +390,21 @@ def save_all_responses(
     data.to_csv(datapath, index=False)
 
 
-def construct_in_context_examples(data_filenames: list[str]) -> str:
+def construct_in_context_examples(data_filenames: list[str]) -> tuple[str, list[dict]]:
+    """
+    Read annotated data from a list of files. Use some of that to build a single prompt
+    (for in-context learning). Return the rest of the data as a list of labelled examples,
+    ready for use as evaluation data.
+    """
 
     _training_data = make_training_set_multi_label(data_filenames, include_prompt=False)
+    _training_data = _training_data.sample(frac=1)  # shuffle rows
+
     examples = ""
-    for _id, eg in _training_data.head(70).iterrows():
+    split_position = int(_training_data.shape[0] * 0.8)
+    hold_out_set = _training_data.iloc[split_position:, :]
+
+    for _id, eg in _training_data.head(split_position).iterrows():
         examples += f"Input: {eg['input_text']}\n"
         target = eg["output_text"]
         for t in target:
@@ -412,7 +422,7 @@ def construct_in_context_examples(data_filenames: list[str]) -> str:
 
         examples += f"Output: {target}\n"
 
-    return examples
+    return examples, hold_out_set
 
 
 if __name__ == "__main__":
@@ -445,20 +455,34 @@ if __name__ == "__main__":
 
     if mode == "in_context":
 
-        model = GenerativeModel("gemini-1.5-pro-preview-0409")
-        examples = construct_in_context_examples(["data/MVP_labelled_claims_4.csv"])
-        for texts in texts_list[0:4]:
-            some_captions = youtube_api.load_texts(texts)
+        model = GenerativeModel(
+            "gemini-1.5-pro-preview-0514"
+        )  # or is it 0514 (May 15th update)
+        examples, eval_set = construct_in_context_examples(
+            [
+                "data/MVP_labelled_claims_1.csv",
+                "data/MVP_labelled_claims_2.csv",
+                "data/MVP_labelled_claims_3.csv",
+                "data/MVP_labelled_claims_4.csv",
+            ]
+        )
+        # for texts in texts_list[0:4]:
+        #     some_captions = youtube_api.load_texts(texts)
 
-            all_responses = []
-            for captions in some_captions[0:5]:
-                chunks = youtube_api.form_chunks(captions)
-                all_responses += get_video_responses(
-                    model, chunks, multilabel, in_context_examples=examples
-                )
-            print("\n\n")
-            save_all_responses(all_responses, texts, multilabel, folder="ICL")
-            pretty_format_responses(all_responses, multilabel)
+        #     all_responses = []
+        #     for captions in some_captions[0:5]:
+        #         chunks = youtube_api.form_chunks(captions)
+        eval_chunk = ""
+        for idx, eval_row in eval_set.iterrows():
+            eval_chunk += eval_row["input_text"] + " \n"
+
+        print("\n\nEval chunk:\n", eval_chunk)
+        all_responses = get_video_responses(
+            model, [eval_chunk], multilabel, in_context_examples=examples
+        )
+        print("\n\n")
+        pretty_format_responses(all_responses, multilabel)
+        save_all_responses(all_responses, "hold_out", multilabel, folder="ICL")
 
     if mode == "infer":
         model = get_model_by_display_name("cj_tuned_multi_label_0")
