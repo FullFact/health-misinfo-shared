@@ -1,0 +1,13 @@
+# This configuration compares LLM output of 2 prompts x 2 GPT models across 3 test cases.
+# Learn more: https://promptfoo.dev/docs/configuration/guide
+description: 'Health Prompt Eval v1'
+
+prompts: prompts.txt
+
+providers:
+  - id: 'python:ed_promptfoo_tests.py'
+    label: 'Test script 1'   # Optional display label for this provider
+    # config:
+    #   pythonExecutable: *can set the python executable if you want, but I've just been making sure I'm in the right venv.*
+
+tests: tests.csv
