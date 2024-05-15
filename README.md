@@ -2,6 +2,30 @@
 
 (Respository shared by Full Fact and Google for work on a proof-of-concept)
 
+## Getting started
+
+You’ll need python, poetry and node installed. Then:
+
+1. Install backend dependencies:
+   ```
+   poetry install --no-root
+   ```
+2. Install frontend dependencies
+   ```
+   npm --prefix src/raphael_frontend_react install
+   ```
+
+To start the development servers:
+
+1. Start the backend development server with:
+   ```
+   PYTHONPATH=src USERS=ff:changeme poetry run python -m raphael_backend_flask.app
+   ```
+2. Start the frontend development server with:
+   ```
+   REACT_APP_BASE_URL=http://localhost:3000/api PORT=4000 npm --prefix src/raphael_frontend_react start
+   ```
+3. In a browser, visit http://localhost:4000. Login details are: `ff` / `changeme`.
 
 ## Downloading some captions
 
@@ -53,4 +77,3 @@ For building a set of labelled data, we want to get health claims, without all t
 The `find_claims_within_captions.py` script takes our downloaded YouTube captions and asks Gemini to find all the claims contained within.
 
 > Note on Gemini 1.5: to use this version you have to specify `gemini-1.5-pro-preview-0409` rather than just `gemini-1.5-pro` like you would for 1.0.
-> 
