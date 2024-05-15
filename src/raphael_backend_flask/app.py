@@ -1,7 +1,7 @@
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 import requests
 
-load_dotenv()
+load_dotenv(find_dotenv())
 
 import os
 import json
@@ -17,9 +17,9 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-from db import create_database
-from vertex import process_video
-from youtube import download_captions, extract_title
+from raphael_backend_flask.db import create_database
+from raphael_backend_flask.vertex import process_video
+from raphael_backend_flask.youtube import download_captions, extract_title
 
 DB_PATH = os.getenv("DB_PATH", "database.db")
 
@@ -30,7 +30,9 @@ auth = HTTPBasicAuth()
 
 users = {
     user: generate_password_hash(password)
-    for user, password in (item.split(":") for item in os.environ["USERS"].split(","))
+    for user, password in (
+        item.split(":") for item in os.environ["USERS"].split(",") if item
+    )
 }
 
 
@@ -205,7 +207,9 @@ def create_training_claim() -> ResponseReturnValue:
 @auth.login_required
 def get_training_claims(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
-    claims = execute_sql("SELECT * FROM training_claims WHERE video_id = ?", (video_id,))
+    claims = execute_sql(
+        "SELECT * FROM training_claims WHERE video_id = ?", (video_id,)
+    )
     return jsonify([{**c} for c in claims]), 200
 
 
@@ -244,7 +248,9 @@ def create_inferred_claim() -> ResponseReturnValue:
 @auth.login_required
 def get_inferred_claims(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
-    claims = execute_sql("SELECT * FROM inferred_claims WHERE video_id = ?", (video_id,))
+    claims = execute_sql(
+        "SELECT * FROM inferred_claims WHERE video_id = ?", (video_id,)
+    )
     return jsonify([{**c} for c in claims]), 200
 
 
