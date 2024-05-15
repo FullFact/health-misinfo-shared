@@ -1,0 +1,3 @@
+- name: geerlingguy.certbot
+  src: https://github.com/geerlingguy/ansible-role-certbot
+  version: 5.1.0
