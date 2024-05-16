@@ -74,7 +74,7 @@ poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx
 
 To update and deploy the frontend and backend:
 ```
-poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/docker_deploy.yaml -e pwd=$PWD
+poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/docker_deploy.yaml
 ```
 
 ## Getting claims for YouTube captions

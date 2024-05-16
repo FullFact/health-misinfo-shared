@@ -1,65 +1,17 @@
 ---
-- hosts: localhost
-  connection: local
-
-  tasks:
-    - name: Build Docker image
-      command:
-        cmd: docker build -t raphael/{{item}}:latest -f Dockerfile.{{item}} .
-        chdir: "{{pwd}}"
-      loop:
-        - frontend
-        - backend
-
-    - name: Delete tarball if exists
-      file:
-        path: "{{pwd}}/{{item}}.tar"
-        state: absent
-      loop:
-        - frontend
-        - backend
-
-    - name: Save Docker image to tarball
-      command:
-        cmd: docker save raphael/{{item}}:latest -o {{item}}.tar
-        chdir: "{{pwd}}"
-      loop:
-        - frontend
-        - backend
-
 - hosts: all
   become: true
 
   tasks:
-    - name: Create temporary directory
-      tempfile:
-        state: directory
-        suffix: host
-      register: host_image_dir
-
-    - name: Copy Docker images
-      copy:
-        src: "{{pwd}}/{{item}}.tar"
-        dest: "{{host_image_dir.path}}/"
-      loop:
-        - frontend
-        - backend
-
-    - name: Load Docker images
-      command: "docker load -i \"{{host_image_dir.path }}/{{item}}.tar\""
-      loop:
-        - frontend
-        - backend
-
-    - name: Delete temporary directory
-      file:
-        path: "{{host_image_dir.path}}"
-        state: absent
-
     - name: Copy Compose file
       copy:
-        src: "{{pwd}}/compose.yaml"
+        src: "{{ playbook_dir }}/../../compose.yaml"
         dest: compose.yaml
+
+    # - name: Log into DockerHub
+    #   docker_login:
+    #     username:
+    #     password:
 
     - name: Run docker compose up
       command: docker compose up -d --force-recreate
