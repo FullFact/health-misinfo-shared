@@ -172,3 +172,6 @@ data/*
 
 # sqlite
 *.db
+
+# dotenv
+.env.backend
