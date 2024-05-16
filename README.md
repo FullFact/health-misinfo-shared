@@ -59,15 +59,10 @@ Run `python3 -m tools.db` to plonk database.db into the current directory. If an
 
 Install the necessary roles with `ansible-galaxy install -r ansible/requirements.yml`.
 
-Write the IP of the target server to a file, i.e. `hosts`:
-```
-<target host ip>
-```
-
 To deploy the backend, look at .env.backend.example and copy that to the .env.backend. Put in a user:pass everyone can know, or a couple.
 
-Run `ansible-playbook -i hosts ansible/playbooks/nginx_docker.yaml` to deploy the reverse proxy to that IP address. You will need SSH access to the host. This only needs to be done once.
-Run `ansible-playbook -i hosts ansible/playbooks/docker_deploy.yaml -e pwd=$PWD` to update and deploy the frontend and backend to that IP address. You will need SSH access to the host.
+Run `ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml` to deploy the reverse proxy to that IP address. You will need SSH access to the host. This only needs to be done once.
+Run `ansible-playbook -i ansible/inventories/hosts ansible/playbooks/docker_deploy.yaml -e pwd=$PWD` to update and deploy the frontend and backend to that IP address. You will need SSH access to the host.
 
 ## Getting claims for YouTube captions
 
