@@ -58,13 +58,10 @@ def process_video(transcript: dict) -> list[dict]:
     chunks = youtube_api.form_chunks(transcript)
     for _id, chunk in enumerate(chunks):
         try:
-            llm_response = generate_reponse(chunk["text"])
+            llm_response = generate_reponse(chunk)
             for found_claim in llm_response:
                 found_claim["video_id"] = video_id
-                found_claim["chunk"] = chunk["text"]
-                found_claim["offset_s"] = chunk["start_offset"]
-                found_claim["offset_end_s"] = chunk["end_offset"]
-                print(found_claim)
+                found_claim["chunk"] = chunk
                 llm_responses.append(found_claim)
         except Exception as e:
             # just carry on for now...
@@ -111,8 +108,4 @@ if __name__ == "__main__":
         "prostate_cancer_nat_rem",
         "weight_loss_nat_rem",
     ]
-    # generate_training_set(_folders, label="natural_remedies_x5")
-    all_videos_in_folder = youtube_api.load_texts(_folders[0])
-    for video in all_videos_in_folder:
-        process_video(video)
-        wibble
+    generate_training_set(_folders, label="natural_remedies_x5")
