@@ -1,12 +1,12 @@
 version: '3'
 services:
   raphael_frontend_react:
-    image: docker.io/fullfact/raphael-frontend:latest
+    image: ${REGISTRY}fullfact/raphael-frontend:latest
     ports:
       - "4000:80"
 
   raphael_backend_flask:
-    image: docker.io/fullfact/raphael-backend:latest
+    image: ${REGISTRY}fullfact/raphael-backend:latest
     environment:
       - DB_PATH=/app/data/database.db
     volumes:
