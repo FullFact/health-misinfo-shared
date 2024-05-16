@@ -64,25 +64,22 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 ## Deploy/update a server
 
-Install Ansible. Install the necessary roles:
-```
-poetry run ansible-galaxy install -r ansible/requirements.yml
-```
+For code changes, branches are deployed via a GitHub Actions workflow dispatch.
 
-Copy the example env into place, and update it as required:
-```
-cp .env.backend.example .env.backend
-```
+The process for making nginx changes is a bit more involved:
 
-To deploy the reverse proxy:
-```
-poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml
-```
-
-To update and deploy the frontend and backend:
-```
-poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/docker_deploy.yaml
-```
+1. Install Ansible. Install the necessary roles:
+   ```
+   poetry run ansible-galaxy install -r ansible/requirements.yml
+   ```
+2. Copy the example env into place, and update it as required:
+   ```
+   cp .env.backend.example .env.backend
+   ```
+3. Run:
+   ```
+   poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml
+   ```
 
 ## Getting claims for YouTube captions
 

@@ -61,7 +61,6 @@ jobs:
         with:
           playbook: ./ansible/playbooks/docker_deploy.yaml
           key: ${{ secrets.DEPLOY_KEY }}
-          requirements: ./ansible/requirements.yml
           options: |
             --inventory ./ansible/inventories/hosts
             -e docker_username=${{ secrets.DOCKER_USERNAME }}
