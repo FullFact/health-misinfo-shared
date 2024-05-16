@@ -57,12 +57,25 @@ Run `python3 -m tools.db` to plonk database.db into the current directory. If an
 
 ## Deploy/update a server
 
-Install the necessary roles with `ansible-galaxy install -r ansible/requirements.yml`.
+Install the necessary roles:
+```
+poetry run ansible-galaxy install -r ansible/requirements.yml
+```
 
-To deploy the backend, look at .env.backend.example and copy that to the .env.backend. Put in a user:pass everyone can know, or a couple.
+Copy the example env into place, and update it as required:
+```
+cp .env.backend.example .env.backend
+```
 
-Run `ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml` to deploy the reverse proxy to that IP address. You will need SSH access to the host. This only needs to be done once.
-Run `ansible-playbook -i ansible/inventories/hosts ansible/playbooks/docker_deploy.yaml -e pwd=$PWD` to update and deploy the frontend and backend to that IP address. You will need SSH access to the host.
+To deploy the reverse proxy:
+```
+poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml
+```
+
+To update and deploy the frontend and backend:
+```
+poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/docker_deploy.yaml -e pwd=$PWD
+```
 
 ## Getting claims for YouTube captions
 
