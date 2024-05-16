@@ -2,10 +2,6 @@
 # Maybe add 'physical or mental health'
 
 HEALTH_HARM_PROMPT = """
-            You are a specialist health fact-checker.
-            You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
-            You would always rather say that you do not know the answer than say something which might be incorrect.
-            
             Your task is to help people quickly understand a video transcript and find the most harmful claims about health being made. 
             You should only consider sentences that are about health, medicine, public health or hospitals. 
             You should estimate the potential harm of the claims.
@@ -31,10 +27,6 @@ HEALTH_HARM_PROMPT = """
             """
 
 HEALTH_TRAINING_PROMPT = """
-            You are a specialist health fact-checker.
-            You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
-            You would always rather say that you do not know the answer than say something which might be incorrect.
-            
             Your task is to help people quickly understand a video transcript and find the most harmful claims about health being made. 
             You should only consider claims that are on topics like health, medicine, personal health, public health, drugs, treatments or hospitals. 
             You should estimate the potential harm of the claims.
@@ -61,10 +53,6 @@ HEALTH_TRAINING_PROMPT = """
 # [{'claim': 'Saffron is as effective as Prozac in treating symptoms of depression.', 'explanation': 'high harm'},
 #  {'claim': 'another claim', 'explanation': 'nothing to check'}]
 HEALTH_TRAINING_EXPLAIN_PROMPT = """
-            You are a specialist health fact-checker.
-            You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
-            You would always rather say that you do not know the answer than say something which might be incorrect.
-            
             Your task is to help people quickly understand a video transcript and find the most harmful claims about health being made. 
             You should only consider claims that are on topics like health, medicine, personal health, public health, drugs, treatments or hospitals. 
             You should estimate the potential harm of the claims.
@@ -92,11 +80,7 @@ HEALTH_TRAINING_EXPLAIN_PROMPT = """
 """
 
 # The training prompt ofr multi-label evaluation.
-HEALTH_TRAINING_MULTI_LABEL_PROMPT = """  
-            You are a specialist health fact-checker.
-            You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
-            You would always rather say that you do not know the answer than say something which might be incorrect.
-                     
+HEALTH_TRAINING_MULTI_LABEL_PROMPT = """           
             Your task is to help people quickly understand a video transcript and find the most harmful claims about health being made. 
             You should only consider claims that are on topics like health, medicine, personal health, public health, drugs, treatments or hospitals. 
             You should estimate the potential harm of the claims.
@@ -166,11 +150,7 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
 """
 
 # The inference prompt also asks the model to give a "summary"
-HEALTH_INFER_MULTI_LABEL_PROMPT = """   
-            You are a specialist health fact-checker.
-            You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
-            You would always rather say that you do not know the answer than say something which might be incorrect.
-                    
+HEALTH_INFER_MULTI_LABEL_PROMPT = """           
             Your task is to help people quickly understand a video transcript and find the most harmful claims about health being made. 
             You should only consider claims that are on topics like health, medicine, personal health, public health, drugs, treatments or hospitals. 
             You should estimate the potential harm of the claims.
@@ -247,10 +227,6 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
 
 
 HEALTH_CLAIM_PROMPT = """
-            You are a specialist health fact-checker.
-            You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
-            You would always rather say that you do not know the answer than say something which might be incorrect.
-            
             Your task is to process a video transcript and find any claims made about health. 
             Give the details if a health claim has been made.
             
@@ -278,13 +254,9 @@ HEALTH_CLAIM_PROMPT = """
 # this prompt is for trying to get all the health claims from a youtube transcript.
 # it's used in the find_claims_within_captions.py file.
 TRAINING_SET_HEALTH_CLAIMS_PROMPT = """
-You are a specialist health fact-checker.
-You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
-You would always rather say that you do not know the answer than say something which might be incorrect.
-            
 I am going to give you the captions for a YouTube video in a JSON formatted string.
 
-You are trying to identify claims in the video's text.
+You are a health fact checker, trying to identify claims in the video's text.
 
 I would like you to produce a list of all of the health related claims contained within the video.
 
