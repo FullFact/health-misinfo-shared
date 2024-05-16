@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 54-deployment
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
