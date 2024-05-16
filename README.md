@@ -57,7 +57,7 @@ Run `python3 -m tools.db` to plonk database.db into the current directory. If an
 
 ## Deploy/update a server
 
-Install Ansible. Install the necessary roles with `ansible-galaxy install -r ansible/requirements.yml`.
+Install the necessary roles with `ansible-galaxy install -r ansible/requirements.yml`.
 
 Write the IP of the target server to a file, i.e. `hosts`:
 ```
