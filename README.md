@@ -27,6 +27,17 @@ To start the development servers:
    ```
 3. In a browser, visit http://localhost:4000. Login details are: `ff` / `changeme`.
 
+### Running locally with Docker
+
+Very roughly:
+
+```
+echo 'USERS=ff:changeme' > .env.backend
+docker build -t fullfact/raphael-backend:latest -f Dockerfile.backend .
+docker build -t fullfact/raphael-frontend:latest -f Dockerfile.frontend .
+docker compose up -d
+```
+
 ## Downloading some captions
 
 Use `youtube_api.py` to search by keywords and extract captions to a local filestore, in `data/captions`. Currently set up to prefer English-language captions, though we should aim to be language agnostic in production. The location of the `CLIENT_SECRETS_FILE` needs to be set as an environment variable. ([How to get the credentials](https://developers.google.com/youtube/v3/quickstart/python))
