@@ -56,13 +56,15 @@ def process_video(transcript: dict) -> list[dict]:
     llm_responses = []
 
     chunks = youtube_api.form_chunks(transcript)
-    for _id, (chunk_text, chunk_offset) in enumerate(chunks):
+    for _id, chunk in enumerate(chunks):
         try:
-            llm_response = generate_reponse(chunk_text)
+            llm_response = generate_reponse(chunk["text"])
             for found_claim in llm_response:
                 found_claim["video_id"] = video_id
-                found_claim["chunk"] = chunk_text
-                found_claim["offset_s"] = chunk_offset
+                found_claim["chunk"] = chunk["text"]
+                found_claim["offset_s"] = chunk["start_offset"]
+                found_claim["offset_end_s"] = chunk["end_offset"]
+                print(found_claim)
                 llm_responses.append(found_claim)
         except Exception as e:
             # just carry on for now...
