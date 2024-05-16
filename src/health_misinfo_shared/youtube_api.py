@@ -104,18 +104,21 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript_obj: dict) -> Iterator[str]:
-    """Split/merged a list of sentences into series of overlapping text chunks."""
+def form_chunks(transcript_obj: dict) -> Iterator[tuple[str, float]]:
+    """Split/merged a list of sentences into series of overlapping text chunks.
+    Also offset of start of chunk"""
     current_chunk_text = ""
+    current_chunk_offset = 0.0
     for s in transcript_obj:
         current_chunk_text += s["sentence_text"] + " "
         if len(current_chunk_text) > 5000:
-            yield current_chunk_text
+            yield current_chunk_text, current_chunk_offset
             # Keep the end of this chunk as the start of the next...
             current_chunk_text = current_chunk_text[-500:]
             # ...but remove the first (probably incomplete) word
             current_chunk_text[current_chunk_text.index(" ") :].strip()
-    yield current_chunk_text
+            current_chunk_offset = s["start"]
+    yield current_chunk_text, current_chunk_offset
 
 
 def download_captions(
@@ -130,6 +133,7 @@ def download_captions(
     already_exists = len(existing_captions.get("sentences", [])) > 0
     if not already_exists:
         captions = get_captions(video_id, video_title=video_title, query=query)
+        # captions['sentences'] is a list of dicts {"start": <offset, seconds>, "sentence_text": <text>}
         if captions:
             target_dir = f"data/captions/{folder}"
             Path(target_dir).mkdir(parents=True, exist_ok=True)
@@ -298,5 +302,7 @@ def multi_issue_search():
 
 
 if __name__ == "__main__":
-    multi_issue_search()
-    print()
+    # multi_issue_search()
+    # print()
+
+    download_captions("o9AEPKn4MMI", "dc_test_timestamp")
