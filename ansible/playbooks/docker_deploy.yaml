@@ -8,10 +8,10 @@
         src: "{{ playbook_dir }}/../../compose.yaml"
         dest: compose.yaml
 
-    # - name: Log into DockerHub
-    #   docker_login:
-    #     username:
-    #     password:
+    - name: Log into DockerHub
+      docker_login:
+        username: "{{ docker_username }}"
+        password: "{{ docker_token }}"
 
     - name: Run docker compose up
-      command: docker compose up -d --force-recreate
+      command: docker compose up -d
