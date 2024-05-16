@@ -53,7 +53,7 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 ## Deploy/update a server
 
-Install the necessary roles:
+Install Ansible. Install the necessary roles:
 ```
 poetry run ansible-galaxy install -r ansible/requirements.yml
 ```
@@ -89,4 +89,3 @@ We introduce all prompts with a persona, outlining that the model will be acting
 > You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
 >
 > You would always rather say that you do not know the answer than say something which might be incorrect.
-           
