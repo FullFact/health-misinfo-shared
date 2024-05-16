@@ -71,3 +71,14 @@ For building a set of labelled data, we want to get health claims, without all t
 The `find_claims_within_captions.py` script takes our downloaded YouTube captions and asks Gemini to find all the claims contained within.
 
 > Note on Gemini 1.5: to use this version you have to specify `gemini-1.5-pro-preview-0409` rather than just `gemini-1.5-pro` like you would for 1.0.
+
+## Writing new prompts
+
+We introduce all prompts with a persona, outlining that the model will be acting as a specialist health fact-checker. If new prompts are written, ensure the following passage is added to the front:
+
+> You are a specialist health fact-checker.
+>
+> You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
+>
+> You would always rather say that you do not know the answer than say something which might be incorrect.
+           
