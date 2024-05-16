@@ -1,3 +1,5 @@
+node_modules/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -159,16 +161,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# UI
-node_modules
-
-# Data science
-data/*
-!data/train_data_v2.json
-!data/training_set_v2.csv
-!data/training_set.csv
-!data/captions/README.md
-.vscode/launch.json
-
-# sqlite
-*.db
+# data/*
+# !data/train_data_v2.json
+# !data/training_set_v2.csv
+# !data/training_set.csv
+# !data/captions/README.md
+# .vscode/launch.json

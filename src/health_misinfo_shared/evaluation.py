@@ -32,7 +32,7 @@ def closest_rouge(pred: str, targs: list[str]) -> float:
 def explain_build_results_table(
     model: TextGenerationModel, target_data: pd.DataFrame
 ) -> pd.DataFrame:
-    """Simple evaluation of 'explaination'-type model by feeding labelled set into model.
+    """Simple evaluation of 'explanation'-type model by feeding labelled set into model.
     Return a full table of results comparing target set and model outputs."""
     # TODO: use a separate hold-out evaluation set instead of training set
 
