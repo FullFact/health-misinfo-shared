@@ -5,7 +5,7 @@
   tasks:
     - name: Build Docker image
       command:
-        cmd: docker build -t raphael/{{item}}:latest -f Dockerfile.{{item}}
+        cmd: docker build -t raphael/{{item}}:latest -f Dockerfile.{{item}} .
         chdir: "{{pwd}}"
       loop:
         - frontend
