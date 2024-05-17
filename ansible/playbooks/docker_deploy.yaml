@@ -13,5 +13,8 @@
         username: "{{ docker_username }}"
         password: "{{ docker_token }}"
 
+    - name: Run docker compose pull
+      command: docker compose pull
+
     - name: Run docker compose up
       command: docker compose up -d
