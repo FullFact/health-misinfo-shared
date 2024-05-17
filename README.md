@@ -68,7 +68,11 @@ For code changes, branches are deployed via a GitHub Actions workflow dispatch.
 
 The process for making nginx changes is a bit more involved:
 
-1. Install Ansible. Install the necessary roles:
+1. Install Ansible
+   ```
+   poetry run pip install ansible
+   ```
+2. Install the necessary roles:
    ```
    poetry run ansible-galaxy install -r ansible/requirements.yml
    ```
