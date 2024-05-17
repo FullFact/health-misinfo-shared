@@ -104,11 +104,11 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript_obj: dict) -> Iterator[str]:
+def form_chunks(transcript: list[dict]) -> Iterator[str]:
     """Split/merged a list of sentences into series of overlapping text chunks."""
     current_chunk_text = ""
-    for s in transcript_obj:
-        current_chunk_text += s["sentence_text"] + " "
+    for sentence in transcript:
+        current_chunk_text += sentence["sentence_text"] + " "
         if len(current_chunk_text) > 5000:
             yield current_chunk_text
             # Keep the end of this chunk as the start of the next...
