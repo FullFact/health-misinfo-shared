@@ -34,9 +34,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=min
 
-      - name: Populate .env.backend
+      - name: Populate .env
         run: |
-          echo 'USERS=${{ secrets.USERS }}' > .env.backend
+          echo 'USERS=${{ secrets.USERS }}' > .env
 
       - name: Build and push backend
         uses: docker/build-push-action@v5

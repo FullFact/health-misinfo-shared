@@ -3,9 +3,6 @@ node_modules/
 # sqlite
 *.db
 
-# dotenv
-.env.backend
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

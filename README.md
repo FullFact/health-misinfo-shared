@@ -32,7 +32,7 @@ To start the development servers:
 Very roughly:
 
 ```
-echo 'USERS=ff:changeme' > .env.backend
+cp .env.example .env  # and populate this
 docker build -t fullfact/raphael-backend:latest -f Dockerfile.backend .
 docker build -t fullfact/raphael-frontend:latest -f Dockerfile.frontend .
 docker compose up -d
@@ -74,7 +74,7 @@ The process for making nginx changes is a bit more involved:
    ```
 2. Copy the example env into place, and update it as required:
    ```
-   cp .env.backend.example .env.backend
+   cp .env.example .env
    ```
 3. Run:
    ```
