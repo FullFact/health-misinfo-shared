@@ -14,4 +14,4 @@
         password: "{{ docker_token }}"
 
     - name: Run docker compose up
-      command: REGISTRY=docker.io/ docker compose up -d
+      command: REGISTRY='docker.io/' docker compose up -d
