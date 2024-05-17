@@ -15,5 +15,3 @@
 
     - name: Run docker compose up
       command: docker compose up -d
-      environment:
-        REGISTRY: "docker.io/"
