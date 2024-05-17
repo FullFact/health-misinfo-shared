@@ -1,12 +1,12 @@
 version: '3'
 services:
   raphael_frontend_react:
-    image: localhost/raphael/frontend
+    image: fullfact/raphael-frontend:latest
     ports:
       - "4000:80"
 
   raphael_backend_flask:
-    image: localhost/raphael/backend
+    image: fullfact/raphael-backend:latest
     environment:
       - DB_PATH=/app/data/database.db
     volumes:

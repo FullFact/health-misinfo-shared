@@ -27,6 +27,17 @@ To start the development servers:
    ```
 3. In a browser, visit http://localhost:4000. Login details are: `ff` / `changeme`.
 
+### Running locally with Docker
+
+Very roughly:
+
+```
+cp .env.example .env  # and populate this
+docker build -t fullfact/raphael-backend:latest -f Dockerfile.backend .
+docker build -t fullfact/raphael-frontend:latest -f Dockerfile.frontend .
+docker compose up -d
+```
+
 ## Downloading some captions
 
 Use `youtube_api.py` to search by keywords and extract captions to a local filestore, in `data/captions`. Currently set up to prefer English-language captions, though we should aim to be language agnostic in production. The location of the `CLIENT_SECRETS_FILE` needs to be set as an environment variable. ([How to get the credentials](https://developers.google.com/youtube/v3/quickstart/python))
@@ -53,17 +64,22 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 ## Deploy/update a server
 
-Install Ansible. Install the necessary roles with `ansible-galaxy install -r ansible/requirements.yml`.
+For code changes, branches are deployed via a GitHub Actions workflow dispatch.
 
-Write the IP of the target server to a file, i.e. `hosts`:
-```
-<target host ip>
-```
+The process for making nginx changes is a bit more involved:
 
-To deploy the backend, look at .env.backend.example and copy that to the .env.backend. Put in a user:pass everyone can know, or a couple.
-
-Run `ansible-playbook -i hosts ansible/playbooks/nginx_docker.yaml` to deploy the reverse proxy to that IP address. You will need SSH access to the host. This only needs to be done once.
-Run `ansible-playbook -i hosts ansible/playbooks/docker_deploy.yaml -e pwd=$PWD` to update and deploy the frontend and backend to that IP address. You will need SSH access to the host.
+1. Install Ansible
+   ```
+   poetry run pip install ansible
+   ```
+2. Install the necessary roles:
+   ```
+   poetry run ansible-galaxy install -r ansible/requirements.yml
+   ```
+2. Run:
+   ```
+   poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml
+   ```
 
 ## Getting claims for YouTube captions
 
@@ -81,4 +97,3 @@ We introduce all prompts with a persona, outlining that the model will be acting
 > You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
 >
 > You would always rather say that you do not know the answer than say something which might be incorrect.
-           
