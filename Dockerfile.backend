@@ -18,4 +18,4 @@ EXPOSE 3000
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV DB_PATH=/app/data/database.db
-CMD ["gunicorn", "-b", "0.0.0.0:3000", "-w", "2", "raphael_backend_flask.app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:3000", "-w", "2", "-t", "1800", "raphael_backend_flask.app:app"]
