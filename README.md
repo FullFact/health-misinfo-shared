@@ -72,11 +72,7 @@ The process for making nginx changes is a bit more involved:
    ```
    poetry run ansible-galaxy install -r ansible/requirements.yml
    ```
-2. Copy the example env into place, and update it as required:
-   ```
-   cp .env.example .env
-   ```
-3. Run:
+2. Run:
    ```
    poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml
    ```
