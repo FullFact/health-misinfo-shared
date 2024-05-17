@@ -64,7 +64,7 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 ## Deploy/update a server
 
-For code changes, branches are deployed via a GitHub Actions workflow dispatch.
+For code changes, branches are deployed via a [GitHub Actions workflow dispatch](https://github.com/FullFact/health-misinfo-shared/actions/workflows/ci.yml).
 
 The process for making nginx changes is a bit more involved:
 
