@@ -1,5 +1,4 @@
 from dotenv import find_dotenv, load_dotenv
-import requests
 
 load_dotenv(find_dotenv())
 
@@ -10,15 +9,15 @@ import sqlite3
 from sqlite3 import Connection, Row
 from urllib.parse import urlparse, parse_qs
 
+import requests
 from flask import Flask, redirect, request, jsonify, g, url_for
 from flask.typing import ResponseReturnValue
 from flask_httpauth import HTTPBasicAuth
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
-
+from health_misinfo_shared.vertex import process_video
 from raphael_backend_flask.db import create_database
-from raphael_backend_flask.vertex import process_video
 from raphael_backend_flask.youtube import download_captions, extract_title
 
 DB_PATH = os.getenv("DB_PATH", "database.db")

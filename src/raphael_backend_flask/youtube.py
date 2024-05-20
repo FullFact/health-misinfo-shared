@@ -6,30 +6,8 @@
 # we parse the raw XML file to get a temporary link to the captions and download those.
 
 import re
-from typing import Iterable
 import requests
-
-
-def chunked_transcript(transcript: list[dict]) -> Iterable[str]:
-    """Split/merged a list of sentences into series of overlapping text chunks."""
-
-    current_chunk_text = ""
-    for sentence in transcript:
-        current_chunk_text += sentence["sentence_text"] + " "
-        if len(current_chunk_text) > 5000:
-            yield current_chunk_text
-            # Keep the end of this chunk as the start of the next...
-            # ...but remove the first (probably incomplete) word
-            current_chunk_text = current_chunk_text[-500:]
-            start_idx = current_chunk_text.strip().find(" ")
-            current_chunk_text = current_chunk_text[start_idx:]
-
-    yield current_chunk_text
-
-
-def clean_str(d: dict) -> dict:
-    d["sentence_text"] = d["sentence_text"].replace("&amp;#39;", "'")
-    return d
+from health_misinfo_shared.youtube_api import clean_str
 
 
 urls_re = re.compile('(https://www.youtube.com/api/timedtext[^"]+lang=en)')
