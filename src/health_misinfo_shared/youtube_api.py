@@ -104,16 +104,16 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript_obj: dict) -> Iterator[dict]:
+def form_chunks(transcript: list[dict]) -> Iterator[dict]:
     """Split/merged a list of sentences into series of overlapping text chunks.
     Each chunk is a dict containing the text and the start/end timestamps"""
     current_chunk_text = ""
     current_chunk_start_offset = 0.0
     current_chunk_end_offset = 0.0
-    for s in transcript_obj:
-        current_chunk_text += s["sentence_text"] + " "
+    for sentence in transcript:
+        current_chunk_text += sentence["sentence_text"] + " "
         if len(current_chunk_text) > 1500:
-            current_chunk_end_offset = s["start"]
+            current_chunk_end_offset = sentence["start"]
             yield {
                 "text": current_chunk_text,
                 "start_offset": current_chunk_start_offset,
@@ -123,8 +123,8 @@ def form_chunks(transcript_obj: dict) -> Iterator[dict]:
             current_chunk_text = current_chunk_text[-500:]
             # ...but remove the first (probably incomplete) word
             current_chunk_text[current_chunk_text.index(" ") :].strip()
-            current_chunk_start_offset = s["start"]
-    current_chunk_end_offset = s["start"]
+            current_chunk_start_offset = sentence["start"]
+    current_chunk_end_offset = sentence["start"]
     yield {
         "text": current_chunk_text,
         "start_offset": current_chunk_start_offset,
