@@ -115,4 +115,3 @@ if __name__ == "__main__":
     all_videos_in_folder = youtube_api.load_texts(_folders[0])
     for video in all_videos_in_folder:
         process_video(video)
-        wibble
