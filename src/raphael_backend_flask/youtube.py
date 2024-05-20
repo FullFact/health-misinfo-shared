@@ -5,6 +5,7 @@
 # NOTE: the official API does't actually give you captions (unless you own the video), so
 # we parse the raw XML file to get a temporary link to the captions and download those.
 
+from html import unescape
 import re
 import requests
 from health_misinfo_shared.youtube_api import clean_str
@@ -39,4 +40,4 @@ def extract_title(html: str) -> str:
     if not len(titles) == 1:
         raise Exception
 
-    return titles[0]
+    return unescape(titles[0])
