@@ -113,5 +113,6 @@ if __name__ == "__main__":
     # generate_training_set(_folders, label="natural_remedies_x5")
     all_videos_in_folder = youtube_api.load_texts(_folders[0])
     for video in all_videos_in_folder:
-        process_video(video)
-        wibble
+        video_id = video[0]["video_id"]
+        llm_response = process_video(video_id, video)
+        print(llm_response)
