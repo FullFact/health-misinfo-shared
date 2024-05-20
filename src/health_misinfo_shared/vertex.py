@@ -3,6 +3,7 @@
 import json
 import csv
 import time
+from typing import Iterator
 import vertexai
 from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
@@ -49,10 +50,9 @@ def generate_reponse(transcript: str) -> list[dict]:
     return jsonl_obj
 
 
-def process_video(video_id: str, transcript: list[dict]) -> list[dict]:
+def process_video(video_id: str, transcript: list[dict]) -> Iterator[dict]:
     """Take the transcript of a single video and pass it to the LLM.
     Return a list of any claims found."""
-    llm_responses = []
 
     chunks = youtube_api.form_chunks(transcript)
     for _id, chunk in enumerate(chunks):
@@ -61,11 +61,10 @@ def process_video(video_id: str, transcript: list[dict]) -> list[dict]:
             for found_claim in llm_response:
                 found_claim["video_id"] = video_id
                 found_claim["chunk"] = chunk
-                llm_responses.append(found_claim)
+                yield found_claim
         except Exception as e:
             # just carry on for now...
             print(e)
-    return llm_responses
 
 
 def generate_training_set(folders: list[str], label: str):
