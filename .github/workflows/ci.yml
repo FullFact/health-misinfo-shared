@@ -15,6 +15,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Populate .env
+        run: |
+          echo 'USERS=${{ secrets.USERS }}' >> .env
+          echo 'MODEL_SHA=`git rev-list -n1 HEAD -- src/health_misinfo_shared`' >> .env
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -23,10 +28,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Populate .env
-        run: |
-          echo 'USERS=${{ secrets.USERS }}' > .env
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
