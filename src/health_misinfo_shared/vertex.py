@@ -6,7 +6,7 @@ import time
 import vertexai
 from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
-import health_misinfo_shared.youtube_api
+from health_misinfo_shared import youtube_api
 from health_misinfo_shared.prompts import HEALTH_CLAIM_PROMPT, HEALTH_HARM_PROMPT
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
@@ -49,10 +49,9 @@ def generate_reponse(transcript: str) -> list[dict]:
     return jsonl_obj
 
 
-def process_video(transcript: dict) -> list[dict]:
+def process_video(video_id: str, transcript: list[dict]) -> list[dict]:
     """Take the transcript of a single video and pass it to the LLM.
     Return a list of any claims found."""
-    video_id = transcript[0].get("video_id")
     llm_responses = []
 
     chunks = youtube_api.form_chunks(transcript)
@@ -81,9 +80,9 @@ def generate_training_set(folders: list[str], label: str):
             if len(video) == 0:
                 print(f"Nothing in {video} !")
                 continue
-            # video_id = video[0].get("video_id")
+            video_id = video[0].get("video_id")
 
-            claims = process_video(video)
+            claims = process_video(video_id, video)
             all_responses.extend(claims)
 
             with open(f"llm_responses_{label}.jsonl", "wt", encoding="utf-8") as fout:

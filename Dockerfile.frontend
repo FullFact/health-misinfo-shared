@@ -2,6 +2,7 @@ FROM node:18.2-alpine AS builder
 
 WORKDIR /app
 COPY src/raphael_frontend_react/package*.json ./
+COPY .env ./.env
 
 RUN npm ci
 

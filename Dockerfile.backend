@@ -10,7 +10,7 @@ RUN poetry config virtualenvs.create false \
 
 COPY src/health_misinfo_shared ./health_misinfo_shared
 COPY src/raphael_backend_flask ./raphael_backend_flask
-COPY .env.backend ./.env
+COPY .env ./.env
 RUN mkdir data
 
 EXPOSE 3000
@@ -18,4 +18,4 @@ EXPOSE 3000
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV DB_PATH=/app/data/database.db
-CMD ["gunicorn", "-b", "0.0.0.0:3000", "-w", "2", "raphael_backend_flask.app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:3000", "-w", "2", "-t", "1800", "raphael_backend_flask.app:app"]
