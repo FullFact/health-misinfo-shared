@@ -31,6 +31,8 @@ flask = "^3.0.3"
 flask-httpauth = "^4.8.0"
 flask-cors = "^4.0.0"
 gunicorn = "^22.0.0"
+fsspec = "^2024.5.0"
+gcsfs = "^2024.5.0"
 
 
 [tool.poetry.group.dev.dependencies]
