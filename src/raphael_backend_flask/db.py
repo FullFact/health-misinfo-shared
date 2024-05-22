@@ -15,7 +15,7 @@ def create_table(db: Connection, statement: str) -> None:
 
 table_youtube_videos = """
     CREATE TABLE youtube_videos (
-        id TEXT PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         metadata TEXT,
         transcript TEXT
     );
@@ -51,7 +51,6 @@ table_training_claims = """
         youtube_id TEXT,
         claim TEXT,
         label TEXT,
-        FOREIGN KEY (youtube_id) REFERENCES youtube_videos (id)
     );
     """
 
