@@ -94,23 +94,43 @@ def extract_youtube_id(url: str) -> str:
         raise Exception
 
 
-def update_video_transcript(
+def create_youtube_video(
     video_id: str,
-    url: str,
-    metadata: dict | None,
-    transcript: list[dict] | None,
+    metadata: dict,
+    transcript: str = "",
+) -> None:
+    execute_sql(
+        "REPLACE INTO youtube_videos (id, metadata, transcript) VALUES (?, ?, ?)",
+        (
+            video_id,
+            json.dumps(metadata),
+            transcript,
+        ),
+    )
+
+
+def create_extraction_run() -> tuple[int, str]:
+    res: Row
+    res, *_ = execute_sql(
+        f"REPLACE INTO claim_extraction_runs DEFAULT VALUES returning id, timestamp"
+    )
+    return res["id"], res["timestamp"]
+
+
+def update_extraction_run(
+    id: int,
+    timestamp: str,
+    video_id: str,
+    model: str,
     status: str,
 ) -> None:
     execute_sql(
-        "REPLACE INTO video_transcripts (id, url, metadata, transcript, status) VALUES (?, ?, ?, ?, ?)",
+        f"REPLACE INTO claim_extraction_runs (id, timestamp, video_id, model, status) VALUES (?, ?, ?, ?, ?);",
         (
+            id,
+            timestamp,
             video_id,
-            url,
-            json.dumps(metadata),
-            # siiigh
-            "\n".join(sentence["sentence_text"] for sentence in transcript)
-            if transcript
-            else None,
+            model,
             status,
         ),
     )
@@ -120,36 +140,47 @@ def update_video_transcript(
 @auth.login_required
 def post_transcripts() -> ResponseReturnValue:
     data = request.get_json()
+
+    model = "gemini-pro"  # TODO: This should be configurable somehow? I guess?
     video_id = extract_youtube_id(data["id"])
     video_url = f"https://youtube.com/watch?v={video_id}"
+
+    rowid, timestamp = create_extraction_run()
+    update_extraction_run(rowid, timestamp, video_id, model, "processing")
+
     with requests.get(video_url, timeout=60) as resp:
         video_html = resp.text
+    transcript_sentences = download_captions(video_html)
 
-    # Make transcript processing
-    update_video_transcript(video_id, video_url, None, None, "processing")
-
+    # create the YouTube video component
     title = extract_title(video_html)
-    metadata = {"title": title}
-    transcript = download_captions(video_html)
+    metadata = {
+        "title": title,
+        "url": video_url,
+    }
+    transcript = "\n".join(s["sentence_text"] for s in transcript_sentences)
 
-    # Add transcript text
-    update_video_transcript(video_id, video_url, metadata, transcript, "processing")
-    claims = process_video(video_id, transcript)
+    create_youtube_video(video_id, metadata, transcript)
+
+    # extract claims
+    claims = process_video(video_id, transcript_sentences)
 
     for claim in claims:
         execute_sql(
-            "INSERT INTO inferred_claims (video_id, claim, label, model, offset_ms) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO inferred_claims (run_id, claim, raw_sentence_text, label, offset_start_s, offset_end_s) \
+                 VALUES (?, ?, ?, ?, ?, ?)",
             (
-                video_id,
+                rowid,
                 claim["claim"],
+                None,  # TODO: raw_sentence_text
                 "health",
-                "gemini-pro",
-                claim["offset_ms"],
+                None,  # TODO: sentence timings
+                None,
             ),
         )
 
     # Mark transcript done
-    update_video_transcript(video_id, video_url, metadata, transcript, "completed")
+    update_extraction_run(rowid, timestamp, video_id, model, "completed")
 
     return jsonify(id=data["id"]), 201
 
@@ -158,9 +189,7 @@ def post_transcripts() -> ResponseReturnValue:
 @auth.login_required
 def get_transcript(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
-    transcripts = execute_sql(
-        "SELECT * FROM video_transcripts WHERE id = ?", (video_id,)
-    )
+    transcripts = execute_sql("SELECT * FROM youtube_videos WHERE id = ?", (video_id,))
     if transcripts:
         return jsonify(**transcripts[0]), 200
     return jsonify({"error": "transcript not found"}), 404
@@ -171,7 +200,7 @@ def get_transcript(id: str) -> ResponseReturnValue:
 def get_transcript_status(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
     transcripts = execute_sql(
-        "SELECT * FROM video_transcripts WHERE id = ?", (video_id,)
+        "SELECT * FROM claim_extraction_runs WHERE youtube_id = ?", (video_id,)
     )
     if transcripts:
         return jsonify({"status": transcripts[0]["status"]}), 200
@@ -182,7 +211,7 @@ def get_transcript_status(id: str) -> ResponseReturnValue:
 @auth.login_required
 def delete_transcript(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
-    execute_sql("DELETE FROM video_transcripts WHERE id = ?", (video_id,))
+    execute_sql("DELETE FROM youtube_videos WHERE id = ?", (video_id,))
     return "", 204
 
 
@@ -191,12 +220,11 @@ def delete_transcript(id: str) -> ResponseReturnValue:
 def create_training_claim() -> ResponseReturnValue:
     data = request.get_json()
     execute_sql(
-        "INSERT INTO training_claims (video_id, claim, label, offset_ms) VALUES (?, ?, ?, ?)",
+        "INSERT INTO training_claims (youtube_id, claim, label) VALUES (?, ?, ?)",
         (
             data["video_id"],
             data["claim"],
             data["label"],
-            data["offset_ms"],
         ),
     )
     return jsonify(data), 201
@@ -207,7 +235,7 @@ def create_training_claim() -> ResponseReturnValue:
 def get_training_claims(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
     claims = execute_sql(
-        "SELECT * FROM training_claims WHERE video_id = ?", (video_id,)
+        "SELECT * FROM training_claims WHERE youtube_id = ?", (video_id,)
     )
     return jsonify([{**c} for c in claims]), 200
 
@@ -222,7 +250,7 @@ def get_training_claims_status(id: str) -> ResponseReturnValue:
 @auth.login_required
 def delete_training_claim(id: str) -> ResponseReturnValue:
     video_id = extract_youtube_id(id)
-    execute_sql("DELETE FROM training_claims WHERE id = ?", (video_id,))
+    execute_sql("DELETE FROM training_claims WHERE youtube_id = ?", (video_id,))
     return "", 204
 
 
