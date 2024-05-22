@@ -143,17 +143,19 @@ def post_transcripts() -> ResponseReturnValue:
 
     for response in inferred_claims:
         claims = response.get("response")
+        chunk = response.get("chunk")
         for claim in claims:
             label_str = json.dumps(claim.get("labels", {}))
             checkworthiness = claim.get("labels", {}).get("summary", "na")
+            # checkworthiness will be one of "worth checking", "may be worth checking" or "not worth checking"
             execute_sql(
                 "INSERT INTO inferred_claims (video_id, claim, label, model, offset_ms) VALUES (?, ?, ?, ?, ?)",
                 (
                     video_id,
-                    claim["claim"] + f" ({checkworthiness})",
+                    claim["claim"],
                     label_str,
                     "gemini-pro",
-                    claim["offset_s"] * 1000,
+                    chunk["start_offset"],
                 ),
             )
 
