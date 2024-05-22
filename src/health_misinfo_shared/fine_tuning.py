@@ -390,18 +390,22 @@ def save_all_responses(
     data.to_csv(datapath, index=False)
 
 
-def construct_in_context_examples(data_filenames: list[str]) -> tuple[str, list[dict]]:
+def construct_in_context_examples(
+    data_filenames: list[str], split_frac=1.0
+) -> tuple[str, list[dict]]:
     """
     Read annotated data from a list of files. Use some of that to build a single prompt
     (for in-context learning). Return the rest of the data as a list of labelled examples,
     ready for use as evaluation data.
+    split_frac specifies what fraction to hold back for evaluation. Set to 1.0 means use all
+    available data in the prompt.
     """
 
     _training_data = make_training_set_multi_label(data_filenames, include_prompt=False)
     _training_data = _training_data.sample(frac=1)  # shuffle rows
 
     examples = ""
-    split_position = int(_training_data.shape[0] * 0.8)
+    split_position = int(_training_data.shape[0] * split_frac)
     hold_out_set = _training_data.iloc[split_position:, :]
 
     for _id, eg in _training_data.head(split_position).iterrows():
@@ -423,6 +427,28 @@ def construct_in_context_examples(data_filenames: list[str]) -> tuple[str, list[
         examples += f"Output: {target}\n"
 
     return examples, hold_out_set
+
+
+def infer_claims(video_id: str, transcript: list[dict]):
+    """For use in app"""
+    chunks = youtube_api.form_chunks(transcript)
+    model = GenerativeModel("gemini-1.5-pro-preview-0514")
+    annotated_data_files = [
+        "data/MVP_labelled_claims_1.csv",
+        "data/MVP_labelled_claims_2.csv",
+        "data/MVP_labelled_claims_3.csv",
+        "data/MVP_labelled_claims_4.csv",
+    ]
+    in_context_examples, empty_hold_out_set = construct_in_context_examples(
+        annotated_data_files, split_frac=1.0
+    )
+    # print(in_context_examples)
+    all_responses = get_video_responses(
+        model, chunks, multilabel=True, in_context_examples=in_context_examples
+    )
+
+    print(all_responses)
+    return all_responses
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from health_misinfo_shared.vertex import process_video
+from health_misinfo_shared.fine_tuning import infer_claims
 from raphael_backend_flask.db import create_database
 from raphael_backend_flask.youtube import download_captions, extract_title
 
@@ -108,9 +109,11 @@ def update_video_transcript(
             url,
             json.dumps(metadata),
             # siiigh
-            "\n".join(sentence["sentence_text"] for sentence in transcript)
-            if transcript
-            else None,
+            (
+                "\n".join(sentence["sentence_text"] for sentence in transcript)
+                if transcript
+                else None
+            ),
             status,
         ),
     )
@@ -134,19 +137,25 @@ def post_transcripts() -> ResponseReturnValue:
 
     # Add transcript text
     update_video_transcript(video_id, video_url, metadata, transcript, "processing")
-    claims = process_video(video_id, transcript)
 
-    for claim in claims:
-        execute_sql(
-            "INSERT INTO inferred_claims (video_id, claim, label, model, offset_ms) VALUES (?, ?, ?, ?, ?)",
-            (
-                video_id,
-                claim["claim"],
-                "health",
-                "gemini-pro",
-                claim["offset_ms"],
-            ),
-        )
+    inferred_claims = infer_claims(video_id, transcript)
+    # returns list of dicts, each being {'response':[{"claim":... "labels:{...}"}], "chunk"}
+
+    for response in inferred_claims:
+        claims = response.get("response")
+        for claim in claims:
+            label_str = json.dumps(claim.get("labels", {}))
+            checkworthiness = claim.get("labels", {}).get("summary", "na")
+            execute_sql(
+                "INSERT INTO inferred_claims (video_id, claim, label, model, offset_ms) VALUES (?, ?, ?, ?, ?)",
+                (
+                    video_id,
+                    claim["claim"] + f" ({checkworthiness})",
+                    label_str,
+                    "gemini-pro",
+                    0,  # claim["offset_ms"], # TODO need to find this!
+                ),
+            )
 
     # Mark transcript done
     update_video_transcript(video_id, video_url, metadata, transcript, "completed")
