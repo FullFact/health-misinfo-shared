@@ -153,7 +153,7 @@ def post_transcripts() -> ResponseReturnValue:
                     claim["claim"] + f" ({checkworthiness})",
                     label_str,
                     "gemini-pro",
-                    0,  # claim["offset_ms"], # TODO need to find this!
+                    claim["offset_s"] * 1000,
                 ),
             )
 
