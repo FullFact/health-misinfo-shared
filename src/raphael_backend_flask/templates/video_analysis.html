@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="sticky-top"><div id="player"></div></div>
+<script async type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
+<script>
+var player;
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('player', {
+    width: '100%',
+    videoId: '{{ video_id }}',
+    playerVars: {
+      'playsinline': 1
+    }
+  });
+}
+
+function jumpTo(ev, offset) {
+  ev.preventDefault();
+  player.loadVideoById({'videoId': '{{ video_id }}', 'startSeconds': offset});
+  return false;
+}
+</script>
+
+{% if transcript['status'] == 'completed' %}<h3 class="mt-2">{{ claims | count }} claims found</h3>{% endif %}
+
+<div class="list-group list-group-flush">
+{% for claim in claims %}
+  {% with offset_s = (claim['offset_ms'] / 1000) | int %}
+  <a class="list-group-item list-group-item-action" href="https://www.youtube.com/watch?v={{ video_id }}&t={{ claim['offset_ms'] / 1000 }}s" onclick="jumpTo(event, '{{ offset_s }}')">
+    <strong>{{ loop.index }}.</strong>
+    {{ claim['claim'] }} (
+    {%- if offset_s // 3600 -%}
+      {{ offset_s // 3600 }}:
+    {%- endif -%}
+
+    {{ offset_s % 3600 // 60 }}:{{ '%02d' % (offset_s % 60) }})
+  </a>
+  {% endwith %}
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,10 +1,5 @@
 version: '3'
 services:
-  raphael_frontend_react:
-    image: fullfact/raphael-frontend:latest
-    ports:
-      - "4000:80"
-
   raphael_backend_flask:
     image: fullfact/raphael-backend:latest
     environment:

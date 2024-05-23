@@ -1,5 +1,9 @@
+import os
 import sqlite3
-from sqlite3 import Connection
+from sqlite3 import Connection, Row
+from typing import Any
+
+from flask import g
 
 Table = tuple[str, dict, list[str]]
 """
@@ -7,10 +11,35 @@ Not overdoing this
 """
 
 
+DB_PATH = os.getenv("DB_PATH", "database.db")
+
+
 def create_table(db: Connection, statement: str) -> None:
     cur = db.cursor()
     cur.execute(statement)
     db.commit()
+
+
+def get_db_connection() -> Connection:
+    conn = g.get("_database")
+    if not conn:
+        if not os.path.isfile(DB_PATH):
+            create_database(DB_PATH)
+        conn = g._database = sqlite3.connect(f"file:{DB_PATH}?mode=rw", uri=True)
+    conn.row_factory = Row
+    return conn
+
+
+def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
+    """Open/close the database for each request, we don't expect to make many."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("PRAGMA foreign_keys = ON")
+    cur.execute(sql, params)
+    data = cur.fetchall()
+    conn.commit()
+    cur.close()
+    return data
 
 
 table_video_transcripts = """
@@ -45,6 +74,8 @@ table_inferred_claims = """
         FOREIGN KEY (video_id) REFERENCES video_transcripts(id)
     );
     """
+
+
 def create_database(path: str) -> None:
     db: Connection = sqlite3.connect(path)
 
@@ -53,6 +84,7 @@ def create_database(path: str) -> None:
     create_table(db, table_inferred_claims)
 
     db.close()
+
 
 if __name__ == "__main__":
     create_database("database.db")

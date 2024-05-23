@@ -5,11 +5,12 @@
 # NOTE: the official API does't actually give you captions (unless you own the video), so
 # we parse the raw XML file to get a temporary link to the captions and download those.
 
-from html import unescape
 import re
-import requests
-from health_misinfo_shared.youtube_api import clean_str
+from html import unescape
 
+import requests
+
+from health_misinfo_shared.youtube_api import clean_str
 
 urls_re = re.compile('(https://www.youtube.com/api/timedtext[^"]+lang=en)')
 caption_re = re.compile(
