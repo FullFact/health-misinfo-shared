@@ -70,6 +70,14 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
     return data
 
 
+@app.get("/api/extracted/")
+@auth.login_required
+def get_extracted() -> ResponseReturnValue:
+    extracted = execute_sql("SELECT * FROM claim_extraction_runs")
+    return jsonify([{**e} for e in extracted]), 200
+
+
+
 @app.get("/api/transcripts/")
 @auth.login_required
 def get_transcripts() -> ResponseReturnValue:
@@ -195,16 +203,15 @@ def get_transcript(id: str) -> ResponseReturnValue:
     return jsonify({"error": "transcript not found"}), 404
 
 
-@app.get("/api/transcripts/<string:id>/status")
+@app.get("/api/extracted/<int:id>/status")
 @auth.login_required
-def get_transcript_status(id: str) -> ResponseReturnValue:
-    video_id = extract_youtube_id(id)
+def get_extraction_status(id: int) -> ResponseReturnValue:
     transcripts = execute_sql(
-        "SELECT * FROM claim_extraction_runs WHERE youtube_id = ?", (video_id,)
+        "SELECT * FROM claim_extraction_runs WHERE id = ?", (id,)
     )
     if transcripts:
         return jsonify({"status": transcripts[0]["status"]}), 200
-    return jsonify({"error": "transcript not found"}), 404
+    return jsonify({"error": "run not found"}), 404
 
 
 @app.delete("/api/transcripts/<string:id>")
@@ -233,24 +240,15 @@ def create_training_claim() -> ResponseReturnValue:
 @app.get("/api/training_claims/<string:id>")
 @auth.login_required
 def get_training_claims(id: str) -> ResponseReturnValue:
-    video_id = extract_youtube_id(id)
     claims = execute_sql(
-        "SELECT * FROM training_claims WHERE youtube_id = ?", (video_id,)
+        "SELECT * FROM training_claims WHERE id = ?", (id,)
     )
     return jsonify([{**c} for c in claims]), 200
 
-
-@app.get("/api/training_claims/<string:id>/status")
+@app.delete("/api/training_claims/<int:id>")
 @auth.login_required
-def get_training_claims_status(id: str) -> ResponseReturnValue:
-    return redirect(url_for("get_transcript_status", id=id))
-
-
-@app.delete("/api/training_claims/<string:id>")
-@auth.login_required
-def delete_training_claim(id: str) -> ResponseReturnValue:
-    video_id = extract_youtube_id(id)
-    execute_sql("DELETE FROM training_claims WHERE youtube_id = ?", (video_id,))
+def delete_training_claim(id: int) -> ResponseReturnValue:
+    execute_sql("DELETE FROM training_claims WHERE id = ?", (id,))
     return "", 204
 
 
@@ -259,39 +257,40 @@ def delete_training_claim(id: str) -> ResponseReturnValue:
 def create_inferred_claim() -> ResponseReturnValue:
     data = request.get_json()
     execute_sql(
-        "INSERT INTO inferred_claims (video_id, claim, label, model, offset_ms) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO inferred_claims \
+            (run_id, claim, raw_sentence_text, label, offset_start_s, offset_end_s) \
+        VALUES (?, ?, ?, ?, ?, ?)",
         (
-            data["video_id"],
-            data["claim"],
-            data["label"],
-            data["model"],
-            data["offset_ms"],
+           data["run_id"]
+           data["claim"]
+           data["raw_sentence_text"]
+           data["label"]
+           data["offset_start_s"]
+           data["offset_end_s"]
         ),
     )
     return jsonify(data), 201
 
 
-@app.get("/api/inferred_claims/<string:id>")
+@app.get("/api/inferred_claims/<int:id>")
 @auth.login_required
-def get_inferred_claims(id: str) -> ResponseReturnValue:
-    video_id = extract_youtube_id(id)
+def get_inferred_claims(id: int) -> ResponseReturnValue:
     claims = execute_sql(
-        "SELECT * FROM inferred_claims WHERE video_id = ?", (video_id,)
+        "SELECT * FROM inferred_claims WHERE run_id = ?", (id,)
     )
     return jsonify([{**c} for c in claims]), 200
 
 
-@app.get("/api/inferred_claims/<string:id>/status")
+@app.get("/api/inferred_claims/<int:id>/status")
 @auth.login_required
-def get_inferred_claims_status(id: str) -> ResponseReturnValue:
-    return redirect(url_for("get_transcript_status", id=id))
+def get_inferred_claims_status(id: int) -> ResponseReturnValue:
+    return redirect(url_for("get_extraction_status", id=id))
 
 
-@app.delete("/api/inferred_claims/<string:id>")
+@app.delete("/api/inferred_claims/<int:id>")
 @auth.login_required
-def delete_inferred_claim(id: str) -> ResponseReturnValue:
-    video_id = extract_youtube_id(id)
-    execute_sql("DELETE FROM inferred_claims WHERE id = ?", (video_id,))
+def delete_inferred_claim(id: int) -> ResponseReturnValue:
+    execute_sql("DELETE FROM inferred_claims WHERE id = ?", (id,))
     return "", 204
 
 
