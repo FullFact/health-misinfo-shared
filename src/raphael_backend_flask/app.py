@@ -16,7 +16,6 @@ from flask_httpauth import HTTPBasicAuth
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from health_misinfo_shared.vertex import process_video
 from health_misinfo_shared.fine_tuning import infer_claims
 from raphael_backend_flask.db import create_database
 from raphael_backend_flask.youtube import download_captions, extract_title
@@ -152,10 +151,10 @@ def post_transcripts() -> ResponseReturnValue:
                 "INSERT INTO inferred_claims (video_id, claim, label, model, offset_ms) VALUES (?, ?, ?, ?, ?)",
                 (
                     video_id,
-                    claim["claim"],
+                    f"({checkworthiness}) " + claim["claim"],
                     label_str,
                     "gemini-pro",
-                    chunk["start_offset"],
+                    chunk["start_offset"] * 1000,
                 ),
             )
 
