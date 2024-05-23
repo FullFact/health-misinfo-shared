@@ -144,7 +144,7 @@ def post_transcripts() -> ResponseReturnValue:
                 claim["claim"],
                 "health",
                 "gemini-pro",
-                claim["offset_s"] * 1000,
+                float(claim["offset_s"]) * 1000,
             ),
         )
 
