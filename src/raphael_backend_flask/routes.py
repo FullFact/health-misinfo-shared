@@ -65,9 +65,9 @@ def get_video_analysis(video_id: str) -> ResponseReturnValue:
     claims_sql = execute_sql(
         "SELECT * FROM inferred_claims WHERE video_id = ?", (video_id,)
     )
-    claims = (dict(claim) for claim in claims_sql)
+    claims = [dict(claim) for claim in claims_sql]
 
-    if not list(claims) and transcript["status"] == "processing":
+    if not claims and transcript["status"] == "processing":
         claims = extract_claims(video_id, dict(transcript))
 
     return stream_template(

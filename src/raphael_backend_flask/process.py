@@ -8,18 +8,36 @@ from raphael_backend_flask.db import execute_sql
 from raphael_backend_flask.youtube import download_captions, extract_title
 
 
+def create_video_transcript(
+    video_id: str,
+    url: str,
+    metadata: dict,
+    transcript: list[dict],
+    status: str,
+) -> None:
+    execute_sql(
+        "REPLACE INTO video_transcripts (id, url, metadata, transcript, status) VALUES (?, ?, ?, ?, ?)",
+        (
+            video_id,
+            url,
+            metadata,
+            transcript,
+            status,
+        ),
+    )
+
+
 def update_video_transcript(
     video_id: str,
     **kwargs: str,
 ) -> None:
-    fields = ", ".join(kwargs.keys())
-    entries = ", ?" * len(kwargs)
+    update_cols = ", ".join([f"{k} = ?" for k in kwargs.keys()])
 
     execute_sql(
-        f"REPLACE INTO video_transcripts (id, {fields}) VALUES (?{entries})",
+        f"UPDATE video_transcripts SET {update_cols} WHERE ID = ?",
         (
-            video_id,
             *kwargs.values(),
+            video_id,
         ),
     )
 
@@ -34,12 +52,12 @@ def download_transcript(video_id: str) -> None:
     transcript = download_captions(video_html)
 
     # Add transcript text
-    update_video_transcript(
+    create_video_transcript(
         video_id,
-        url=video_url,
-        metadata=json.dumps(metadata),
-        transcript=json.dumps(transcript),
-        status="processing",
+        video_url,
+        json.dumps(metadata),
+        json.dumps(transcript),
+        "processing",
     )
 
 
