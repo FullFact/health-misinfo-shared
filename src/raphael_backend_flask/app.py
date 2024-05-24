@@ -5,6 +5,8 @@ try:
 except Exception:
     pass
 
+import os
+
 from sqlite3 import Connection
 from typing import Any
 
@@ -16,6 +18,7 @@ from raphael_backend_flask.routes import routes
 app = Flask(__name__)
 CORS(app)
 app.register_blueprint(routes)
+app.secret_key = os.urandom(12).hex()
 
 
 @app.teardown_appcontext
