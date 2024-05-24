@@ -10,7 +10,7 @@ from raphael_backend_flask.youtube import download_captions, extract_title
 
 def update_video_transcript(
     video_id: str,
-    **kwargs,
+    **kwargs: str,
 ) -> None:
     fields = ", ".join(kwargs.keys())
     entries = ", ?" * len(kwargs)
