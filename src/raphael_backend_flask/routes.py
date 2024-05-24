@@ -57,7 +57,7 @@ def get_video_analysis(video_id: str) -> ResponseReturnValue:
         "SELECT * FROM video_transcripts WHERE id = ?", (video_id,)
     )
     if not transcripts:
-        flash("Transcript not found", "error")
+        flash("Transcript not found", "danger")
         return redirect(url_for("routes.get_home"))
 
     transcript = transcripts[0]
