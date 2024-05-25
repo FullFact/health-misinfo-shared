@@ -4,13 +4,18 @@
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" type="text/css" href="//pattern-library.fullfact.org/css/style.css" />
+    <style type="text/css">
+      a {
+        box-shadow: none;
+      }
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <title>Raphael · Full Fact</title>
   </head>
   <body>
     <nav class="navbar navbar-dark bg-dark">
-      <a href="{{ url_for('routes.get_home') }}" style="box-shadow: none;" class="navbar-brand">Raphael{% if request.path != '/' %}<span class="d-none d-lg-inline"> · Find health misinformation in YouTube videos</span>{% endif %}</a>
+      <a href="{{ url_for('routes.get_home') }}" class="navbar-brand">Raphael{% if request.path != '/' %}<span class="d-none d-lg-inline"> · Find health misinformation in YouTube videos</span>{% endif %}</a>
       <div {% if request.path == '/' %}class="invisible"{% endif %}>
       <form method="POST" action="{{ url_for('routes.post_youtube_url') }}" class="form form-inline">
         <input class="form-control mr-2 d-inline-block w-auto" type="text" name="q" placeholder="Enter a YouTube URL">
@@ -32,11 +37,7 @@
     {% endwith %}
 
     <div class="container mt-6">
-      <div class="row justify-content-center">
-        <div class="col-lg-8">
-          {% block content %}{% endblock %}
-        </div>
-      </div>
+      {% block content %}{% endblock %}
     </div>
     <script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
