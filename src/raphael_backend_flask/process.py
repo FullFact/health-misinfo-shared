@@ -4,47 +4,14 @@ from typing import Generator
 import requests
 
 from health_misinfo_shared.vertex import process_video
-from raphael_backend_flask.db import execute_sql
+from raphael_backend_flask.db import create_video_transcript, execute_sql, update_video_transcript
 from raphael_backend_flask.youtube import download_captions, extract_title
 
 
-def create_video_transcript(
-    video_id: str,
-    url: str,
-    metadata: dict,
-    transcript: list[dict],
-    status: str,
-) -> None:
-    execute_sql(
-        "REPLACE INTO video_transcripts (id, url, metadata, transcript, status) VALUES (?, ?, ?, ?, ?)",
-        (
-            video_id,
-            url,
-            metadata,
-            transcript,
-            status,
-        ),
-    )
-
-
-def update_video_transcript(
-    video_id: str,
-    **kwargs: str,
-) -> None:
-    update_cols = ", ".join([f"{k} = ?" for k in kwargs.keys()])
-
-    execute_sql(
-        f"UPDATE video_transcripts SET {update_cols} WHERE ID = ?",
-        (
-            *kwargs.values(),
-            video_id,
-        ),
-    )
-
-
-def download_transcript(video_id: str) -> None:
-    video_url = f"https://youtube.com/watch?v={video_id}"
-    with requests.get(video_url, timeout=60) as resp:
+def download_transcript(youtube_id: str) -> int:
+    youtube_url = f"https://youtube.com/watch?v={youtube_id}"
+    with requests.get(youtube_url, timeout=60) as resp:
+        resp.raise_for_status()
         video_html = resp.text
 
     title = extract_title(video_html)
@@ -52,31 +19,30 @@ def download_transcript(video_id: str) -> None:
     transcript = download_captions(video_html)
 
     # Add transcript text
-    create_video_transcript(
-        video_id,
-        video_url,
+    return create_video_transcript(
+        youtube_id,
         json.dumps(metadata),
         json.dumps(transcript),
-        "processing",
     )
 
 
-def extract_claims(video_id: str, transcript: dict) -> Generator:
-    sentences = json.loads(transcript["transcript"])
-    claims = process_video(video_id, sentences)
+def extract_claims(run: dict) -> Generator:
+    sentences = json.loads(run["transcript"])
+    claims = process_video(run["id"], sentences)
 
     for claim in claims:
         execute_sql(
-            "INSERT INTO inferred_claims (video_id, claim, label, model, offset_ms) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO inferred_claims (run_id, claim, raw_sentence_text, label, offset_start_s, offset_end_s) VALUES (?, ?, ?, ?, ?, ?)",
             (
-                video_id,
+                run["id"],
                 claim["claim"],
+                claim["sentence"],
                 "health",
-                "gemini-pro",
-                claim["offset_ms"],
+                claim["offset_start_s"],
+                claim["offset_end_s"],
             ),
         )
         yield claim
 
     # Mark transcript done
-    update_video_transcript(video_id, status="completed")
+    update_video_transcript(run["id"], status="completed")

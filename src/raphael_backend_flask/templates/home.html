@@ -13,8 +13,8 @@
 </form>
 <h3>History</h3>
 <div class="list-group list-group-flush">
-{% for transcript in transcripts %}
-  <a class="list-group-item list-group-item-action" href="{{ url_for('routes.get_video_analysis', video_id=transcript['id']) }}">{{ transcript['metadata']['title'] }}</a>
+{% for run in runs %}
+  <a class="list-group-item list-group-item-action" href="{{ url_for('routes.get_video_analysis', run_id=run['id']) }}"><span class="text-muted"><em>{{ run['timestamp'][:10] }}</em></span> · {{ run['metadata']['title'] }}</a>
 {% endfor %}
 </div>
 {% endblock %}

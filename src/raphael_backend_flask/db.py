@@ -42,6 +42,45 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
     return data
 
 
+def create_video_transcript(
+    youtube_id: str,
+    metadata: dict,
+    transcript: list[dict],
+) -> None:
+    execute_sql(
+        "REPLACE INTO youtube_videos (id, metadata, transcript) VALUES (?, ?, ?)",
+        (
+            youtube_id,
+            metadata,
+            transcript,
+        ),
+    )
+    result = execute_sql(
+        "INSERT INTO claim_extraction_runs (youtube_id, model, status) VALUES (?, ?, ?) RETURNING id",
+        (
+            youtube_id,
+            "gemini-pro",
+            "processing",
+        ),
+    )
+    return result[0]["id"]
+
+
+def update_video_transcript(
+    video_id: str,
+    **kwargs: str,
+) -> None:
+    update_cols = ", ".join([f"{k} = ?" for k in kwargs.keys()])
+
+    execute_sql(
+        f"UPDATE claim_extraction_runs SET {update_cols} WHERE ID = ?",
+        (
+            *kwargs.values(),
+            video_id,
+        ),
+    )
+
+
 table_youtube_videos = """
     CREATE TABLE youtube_videos (
         id TEXT PRIMARY KEY,

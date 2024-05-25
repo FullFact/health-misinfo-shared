@@ -7,6 +7,7 @@
 
 import re
 from html import unescape
+from urllib.parse import parse_qs, urlparse
 
 import requests
 
@@ -42,3 +43,21 @@ def extract_title(html: str) -> str:
         raise Exception("Couldn’t extract a title for that video")
 
     return unescape(titles[0])
+
+
+def extract_youtube_id(url: str) -> str:
+    def check_id_length(youtube_id: str) -> str:
+        # YouTube video IDs are 11 characters
+        if len(youtube_id) != 11:
+            raise Exception("Not a valid YouTube video ID")
+        return youtube_id
+
+    parsed = urlparse(url)
+    if parsed.netloc == "youtu.be":
+        return check_id_length(parsed.path[1:])
+
+    if parsed.netloc == "":
+        return check_id_length(parsed.path)
+
+    queries = parse_qs(parsed.query)
+    return check_id_length(queries["v"][0])

@@ -61,8 +61,8 @@ def process_video(video_id: str, transcript: list[dict]) -> Generator:
             for found_claim in llm_response:
                 found_claim["video_id"] = video_id
                 found_claim["chunk"] = chunk["text"]
-                found_claim["offset_ms"] = float(chunk["start_offset"]) * 1000
-                found_claim["offset_end_ms"] = float(chunk["end_offset"]) * 1000
+                found_claim["offset_start_s"] = float(chunk["start_offset"])
+                found_claim["offset_end_s"] = float(chunk["end_offset"])
                 print(found_claim)
                 yield found_claim
         except Exception as e:
