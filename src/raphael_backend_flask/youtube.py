@@ -22,7 +22,7 @@ def download_captions(html: str) -> list[dict]:
     # only find URLs with lang=en
     urls = urls_re.findall(html)
     if not len(urls):
-        raise Exception
+        raise Exception("Couldn’t extract captions for that video")
 
     url = urls[0].replace("\\u0026", "&")
 
@@ -38,7 +38,7 @@ title_re = re.compile("<title>(.*) - YouTube</title>")
 
 def extract_title(html: str) -> str:
     titles = title_re.findall(html)
-    if not len(titles) == 1:
-        raise Exception
+    if len(titles) != 1:
+        raise Exception("Couldn’t extract a title for that video")
 
     return unescape(titles[0])
