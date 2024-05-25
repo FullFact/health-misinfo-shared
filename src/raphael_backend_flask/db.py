@@ -79,7 +79,7 @@ table_training_claims = """
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         youtube_id TEXT,
         claim TEXT,
-        label TEXT,
+        label TEXT
     );
     """
 
