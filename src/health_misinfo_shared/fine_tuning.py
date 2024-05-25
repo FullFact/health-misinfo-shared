@@ -2,7 +2,7 @@
 # Though had a few issues with it..ascii
 
 from __future__ import annotations
-from typing import Optional
+from typing import Generator, Optional
 import json
 import pandas as pd
 from google.auth import default
@@ -264,7 +264,7 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
 
 def get_video_responses(
     model, chunks: list[str], multilabel: bool = False, in_context_examples: str = ""
-) -> None:
+) -> Generator:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
     infer_prompt = (
@@ -276,7 +276,6 @@ def get_video_responses(
         infer_prompt += (
             "\nHere are some examples to learn from:\n" + in_context_examples
         )
-    all_responses = []
 
     for chunk in chunks:
         prompt = f"{infer_prompt}\n```{chunk}``` "
@@ -316,10 +315,9 @@ def get_video_responses(
                         "chunk": chunk,
                         # "safety": candidate.safety_attributes,
                     }
-                    all_responses.append(formatted_response)
+                    yield formatted_response
             except Exception as e:
                 print("*** problem handling output? *** ", e)
-    return all_responses
 
 
 def pretty_format_responses(responses, multilabel: bool = False):
@@ -429,7 +427,7 @@ def construct_in_context_examples(
     return examples, hold_out_set
 
 
-def infer_claims(video_id: str, transcript: list[dict]):
+def infer_claims(video_id: str, transcript: list[dict]) -> Generator:
     """For use in app"""
     chunks = youtube_api.form_chunks(transcript)
     model = GenerativeModel("gemini-1.5-pro-preview-0514")
@@ -447,7 +445,6 @@ def infer_claims(video_id: str, transcript: list[dict]):
         model, chunks, multilabel=True, in_context_examples=in_context_examples
     )
 
-    print(all_responses)
     return all_responses
 
 
@@ -503,9 +500,9 @@ if __name__ == "__main__":
             eval_chunk += eval_row["input_text"] + " \n"
 
         print("\n\nEval chunk:\n", eval_chunk)
-        all_responses = get_video_responses(
+        all_responses = list(get_video_responses(
             model, [eval_chunk], multilabel, in_context_examples=examples
-        )
+        ))
         print("\n\n")
         pretty_format_responses(all_responses, multilabel)
         save_all_responses(all_responses, "hold_out", multilabel, folder="ICL")
@@ -529,7 +526,7 @@ if __name__ == "__main__":
             all_responses = []
             for captions in some_captions[0:5]:
                 chunks = youtube_api.form_chunks(captions)
-                all_responses += get_video_responses(model, chunks, multilabel)
+                all_responses += list(get_video_responses(model, chunks, multilabel))
             print("\n\n")
             # save_all_responses(all_responses, texts, multilabel)
             pretty_format_responses(all_responses, multilabel)

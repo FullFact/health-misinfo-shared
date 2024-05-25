@@ -10,10 +10,6 @@ To run the app locally, you’ll need python, poetry and node installed. Then:
    ```
    poetry install --no-root
    ```
-2. Install frontend dependencies
-   ```
-   npm --prefix src/raphael_frontend_react install
-   ```
 
 To start the development servers:
 
@@ -21,11 +17,7 @@ To start the development servers:
    ```
    PYTHONPATH=src USERS=ff:changeme poetry run python -m raphael_backend_flask.app
    ```
-2. Start the frontend development server with:
-   ```
-   REACT_APP_BASE_URL=http://localhost:3000/api PORT=4000 npm --prefix src/raphael_frontend_react start
-   ```
-3. In a browser, visit http://localhost:4000. Login details are: `ff` / `changeme`.
+2. In a browser, visit http://localhost:3000. Login details are: `ff` / `changeme`.
 
 ### Running locally with Docker
 
@@ -34,7 +26,6 @@ Very roughly:
 ```
 cp .env.example .env  # and populate this
 docker build -t fullfact/raphael-backend:latest -f Dockerfile.backend .
-docker build -t fullfact/raphael-frontend:latest -f Dockerfile.frontend .
 docker compose up -d
 ```
 
