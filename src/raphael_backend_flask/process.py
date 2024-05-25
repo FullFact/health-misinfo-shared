@@ -35,12 +35,13 @@ def extract_claims(run: dict) -> Generator:
     claims = process_video(run["id"], sentences)
 
     for claim in claims:
+        claim["raw_sentence_text"] = claim["sentence"]
         execute_sql(
             "INSERT INTO inferred_claims (run_id, claim, raw_sentence_text, label, offset_start_s, offset_end_s) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 run["id"],
                 claim["claim"],
-                claim["sentence"],
+                claim["raw_sentence_text"],
                 "health",
                 claim["offset_start_s"],
                 claim["offset_end_s"],
