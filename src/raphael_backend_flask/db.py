@@ -56,7 +56,7 @@ table_claim_extraction_runs = """
         youtube_id TEXT,
         model TEXT,
         status TEXT,
-        timestamp INTEGER,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (youtube_id) REFERENCES youtube_videos (id)
     );
     """
