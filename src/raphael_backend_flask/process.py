@@ -4,7 +4,11 @@ from typing import Generator
 import requests
 
 from health_misinfo_shared.vertex import process_video
-from raphael_backend_flask.db import create_video_transcript, execute_sql, update_video_transcript
+from raphael_backend_flask.db import (
+    create_video_transcript,
+    execute_sql,
+    update_video_transcript,
+)
 from raphael_backend_flask.youtube import download_captions, extract_title
 
 

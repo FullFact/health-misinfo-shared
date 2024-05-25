@@ -6,7 +6,6 @@ except Exception:
     pass
 
 import os
-
 from sqlite3 import Connection
 from typing import Any
 

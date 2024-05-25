@@ -44,9 +44,9 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
 
 def create_video_transcript(
     youtube_id: str,
-    metadata: dict,
-    transcript: list[dict],
-) -> None:
+    metadata: str,
+    transcript: str,
+) -> int:
     execute_sql(
         "REPLACE INTO youtube_videos (id, metadata, transcript) VALUES (?, ?, ?)",
         (

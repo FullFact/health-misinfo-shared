@@ -23,17 +23,17 @@ routes = Blueprint("routes", __name__)
 @routes.get("/")
 @auth.login_required
 def get_home() -> ResponseReturnValue:
-    runs = execute_sql("""
+    runs = execute_sql(
+        """
         SELECT *
         FROM claim_extraction_runs, youtube_videos
         WHERE youtube_id = youtube_videos.id
         ORDER BY timestamp DESC
-    """)
+    """
+    )
     return render_template(
         "home.html",
-        runs=[
-            {**t, **{"metadata": json.loads(t["metadata"])}} for t in runs
-        ],
+        runs=[{**t, **{"metadata": json.loads(t["metadata"])}} for t in runs],
     )
 
 
@@ -58,12 +58,15 @@ def post_youtube_url() -> ResponseReturnValue:
 @routes.get("/runs/<run_id>")
 @auth.login_required
 def get_video_analysis(run_id: int) -> ResponseReturnValue:
-    runs = execute_sql("""
+    runs = execute_sql(
+        """
         SELECT *
         FROM claim_extraction_runs, youtube_videos
         WHERE youtube_id = youtube_videos.id
         AND claim_extraction_runs.id = ?
-    """, (run_id,))
+    """,
+        (run_id,),
+    )
     if not runs:
         flash("Transcript not found", "danger")
         return redirect(url_for("routes.get_home"))
