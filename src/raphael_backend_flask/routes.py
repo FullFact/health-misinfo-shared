@@ -71,7 +71,8 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
         flash("Transcript not found", "danger")
         return redirect(url_for("routes.get_home"))
 
-    run = runs[0]
+    run = dict(runs[0])
+    run["metadata"] = json.loads(run["metadata"])
 
     claims_sql = execute_sql(
         "SELECT * FROM inferred_claims WHERE run_id = ?", (run_id,)
@@ -84,10 +85,7 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
     return stream_template(
         "video_analysis.html",
         claims=claims,
-        **{
-            **run,
-            **{"metadata": json.loads(run["metadata"])},
-        },
+        **run,
     )
 
 
