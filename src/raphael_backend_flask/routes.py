@@ -88,10 +88,10 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
     )
 
 
-@routes.delete("/api/transcripts/<string:video_id>")
+@routes.delete("/api/runs/<int:run_id>")
 @auth.login_required
-def delete_transcript(video_id: str) -> ResponseReturnValue:
-    execute_sql("DELETE FROM video_transcripts WHERE id = ?", (video_id,))
+def delete_run(run_id: int) -> ResponseReturnValue:
+    execute_sql("DELETE FROM claim_extraction_runs WHERE id = ?", (run_id,))
     return "", 204
 
 
@@ -100,28 +100,27 @@ def delete_transcript(video_id: str) -> ResponseReturnValue:
 def create_training_claim() -> ResponseReturnValue:
     data = request.get_json()
     execute_sql(
-        "INSERT INTO training_claims (video_id, claim, label, offset_ms) VALUES (?, ?, ?, ?)",
+        "INSERT INTO training_claims (youtube_id, claim, label) VALUES (?, ?, ?)",
         (
-            data["video_id"],
+            data["youtube_id"],
             data["claim"],
             data["label"],
-            data["offset_ms"],
         ),
     )
     return jsonify(data), 201
 
 
-@routes.get("/api/training_claims/<string:video_id>")
+@routes.get("/api/training_claims/<string:youtube_id>")
 @auth.login_required
-def get_training_claims(video_id: str) -> ResponseReturnValue:
+def get_training_claims(youtube_id: str) -> ResponseReturnValue:
     claims = execute_sql(
-        "SELECT * FROM training_claims WHERE video_id = ?", (video_id,)
+        "SELECT * FROM training_claims WHERE youtube_id = ?", (youtube_id,)
     )
     return jsonify([{**c} for c in claims]), 200
 
 
-@routes.delete("/api/training_claims/<string:id>")
+@routes.delete("/api/training_claims/<int:id>")
 @auth.login_required
-def delete_training_claim(id: str) -> ResponseReturnValue:
+def delete_training_claim(id: int) -> ResponseReturnValue:
     execute_sql("DELETE FROM training_claims WHERE id = ?", (id,))
     return "", 204
