@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if status == 'processing' %}
+<div class="alert alert-info text-center fixed-bottom mb-0 searching-for-claims" role="alert">
+  <div class="spinner-border spinner-grow-sm" role="status" style="border-width: .1rem;"></div> Searching for claims…
+</div>
+
+<div class="alert alert-success fixed-bottom mb-0 fade searching-for-claims-done" role="alert">
+  Done.
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
+<div class="container mt-2 mb-6">
+  <div class="row justify-content-center sticky-top bg-white">
+    <div class="col-lg-6 my-4 text-center">
+      <div id="player"></div>
+      <script async type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
+      <script>
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          width: '400px',
+          height: '200px',
+          videoId: '{{ youtube_id }}',
+          playerVars: {
+            'playsinline': 1
+          }
+        });
+      }
+
+      function jumpTo(ev, start, end) {
+        ev.preventDefault();
+        player.loadVideoById({'videoId': '{{ youtube_id }}', 'startSeconds': start, 'endSeconds': end});
+        return false;
+      }
+      </script>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col">
+      {% if status == 'processing' %}
+      <h3 class="mt-2 searching-for-claims">
+        Searching for claims…
+      </h3>
+      {% else %}
+      <h3 class="mt-2">
+        {{ claims | count }} claims found
+      </h3>
+      {% endif %}
+
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th width="50%">Sentence</th>
+            <th width="50%">Claim</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for claim in claims %}
+          <tr class="position-relative">
+            <td>{{ claim['raw_sentence_text'] }}</td>
+            <td>
+              <a class="stretched-link" href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s" onclick="jumpTo(event, '{{ claim['offset_start_s'] }}', '{{ claim['offset_end_s'] }}')">
+                <strong>{{ loop.index }}.</strong>
+                {{ claim['claim'] }} (
+                {%- if claim['offset_start_s'] // 3600 -%}
+                  {{ '%02d' % (claim['offset_start_s'] // 3600) }}:
+                {%- endif -%}
+
+                {{ '%02d' % (claim['offset_start_s'] % 3600 // 60) }}:{{ '%02d' % (claim['offset_start_s'] % 60) }})
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<style type="text/css">
+  .searching-for-claims { display: none; }
+  .searching-for-claims-done { opacity: 1 !important; }
+</style>
+{% endblock %}
