@@ -5,9 +5,9 @@ import requests
 
 from health_misinfo_shared.vertex import process_video
 from raphael_backend_flask.db import (
-    create_video_transcript,
+    create_claim_extraction_run,
     execute_sql,
-    update_video_transcript,
+    update_claim_extraction_run,
 )
 from raphael_backend_flask.youtube import download_captions, extract_title
 
@@ -23,7 +23,7 @@ def download_transcript(youtube_id: str) -> int:
     transcript = download_captions(video_html)
 
     # Add transcript text
-    return create_video_transcript(
+    return create_claim_extraction_run(
         youtube_id,
         json.dumps(metadata),
         json.dumps(transcript),
@@ -50,4 +50,4 @@ def extract_claims(run: dict) -> Generator:
         yield claim
 
     # Mark transcript done
-    update_video_transcript(run["id"], status="complete")
+    update_claim_extraction_run(run["id"], status="complete")

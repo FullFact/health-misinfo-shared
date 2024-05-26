@@ -42,7 +42,7 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
     return data
 
 
-def create_video_transcript(
+def create_claim_extraction_run(
     youtube_id: str,
     metadata: str,
     transcript: str,
@@ -66,7 +66,7 @@ def create_video_transcript(
     return result[0]["id"]
 
 
-def update_video_transcript(
+def update_claim_extraction_run(
     video_id: str,
     **kwargs: str,
 ) -> None:
