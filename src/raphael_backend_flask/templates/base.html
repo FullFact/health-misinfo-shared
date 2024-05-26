@@ -26,7 +26,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-        <div class="alert alert-{{ category }} fade show" role="alert">
+        <div class="alert alert-{{ category }} text-center fade show" role="alert">
           {{ message }}
           <button type="button" class="close" data-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>

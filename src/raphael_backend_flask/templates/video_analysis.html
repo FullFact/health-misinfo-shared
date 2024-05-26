@@ -6,13 +6,6 @@
 <div class="alert alert-info text-center fixed-bottom mb-0 searching-for-claims" role="alert">
   <div class="spinner-border spinner-grow-sm" role="status" style="border-width: .1rem;"></div> Searching for claims…
 </div>
-
-<div class="alert alert-success fixed-bottom mb-0 fade searching-for-claims-done" role="alert">
-  Done.
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-</div>
 {% endif %}
 
 <div class="container mt-2 mb-6">
@@ -70,8 +63,16 @@
   </div>
 </div>
 
+{% if status == 'processing' %}
+<div class="alert alert-success text-center fixed-bottom mb-0 fade show" role="alert">
+  Done.
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
 <style type="text/css">
   .searching-for-claims { display: none; }
-  .searching-for-claims-done { opacity: 1 !important; }
 </style>
 {% endblock %}
