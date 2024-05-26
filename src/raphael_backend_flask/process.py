@@ -50,4 +50,4 @@ def extract_claims(run: dict) -> Generator:
         yield claim
 
     # Mark transcript done
-    update_video_transcript(run["id"], status="completed")
+    update_video_transcript(run["id"], status="complete")
