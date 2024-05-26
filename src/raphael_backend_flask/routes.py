@@ -79,8 +79,11 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
     )
     claims = [dict(claim) for claim in claims_sql]
 
-    if not claims and run["status"] == "processing":
-        claims = extract_claims(dict(run))
+    if run["status"] == "processing":
+        if claims:
+            run["status"] = "incomplete"
+        else:
+            claims = extract_claims(dict(run))
 
     return stream_template(
         "video_analysis.html",

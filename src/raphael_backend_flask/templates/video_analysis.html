@@ -48,38 +48,24 @@
       <h3 class="mt-2 searching-for-claims">
         Searching for claims…
       </h3>
-      {% else %}
+      {% elif status == 'complete' %}
       <h3 class="mt-2">
         {{ claims | count }} claims found
       </h3>
       {% endif %}
 
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th width="50%">Sentence</th>
-            <th width="50%">Claim</th>
-          </tr>
-        </thead>
-        <tbody>
-        {% for claim in claims %}
-          <tr class="position-relative">
-            <td>{{ claim['raw_sentence_text'] }}</td>
-            <td>
-              <a class="stretched-link" href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s" onclick="jumpTo(event, '{{ claim['offset_start_s'] }}', '{{ claim['offset_end_s'] }}')">
-                <strong>{{ loop.index }}.</strong>
-                {{ claim['claim'] }} (
-                {%- if claim['offset_start_s'] // 3600 -%}
-                  {{ '%02d' % (claim['offset_start_s'] // 3600) }}:
-                {%- endif -%}
+      <div class="list-group list-group-flush">
+      {% for claim in claims %}
+        <a class="list-group-item list-group-item-action" title="{{ claim['raw_sentence_text'] }}" href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s" onclick="jumpTo(event, {{ claim['offset_start_s'] }}, {{ claim['offset_end_s'] }})">
+          <strong>{{ loop.index }}.</strong> {{ claim['claim'] }}
+          ({%- if claim['offset_start_s'] // 3600 -%}
+            {{ '%02d' % (claim['offset_start_s'] // 3600) }}:
+          {%- endif -%}
 
-                {{ '%02d' % (claim['offset_start_s'] % 3600 // 60) }}:{{ '%02d' % (claim['offset_start_s'] % 60) }})
-              </a>
-            </td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+          {{ '%02d' % (claim['offset_start_s'] % 3600 // 60) }}:{{ '%02d' % (claim['offset_start_s'] % 60) }})
+        </a>
+      {% endfor %}
+      </div>
     </div>
   </div>
 </div>
