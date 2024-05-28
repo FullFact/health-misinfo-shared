@@ -4,7 +4,7 @@
 
 {% if status == 'processing' %}
 <div class="alert alert-info text-center fixed-bottom mb-0 searching-for-claims" role="alert">
-  <div class="spinner-border spinner-grow-sm" role="status" style="border-width: .1rem;"></div> Searching for claims…
+  <div class="spinner-border spinner-grow-sm" role="status" style="border-width: .1rem;"></div> Analysing…
 </div>
 {% endif %}
 
@@ -39,7 +39,7 @@
     <div class="col">
       {% if status == 'processing' %}
       <h3 class="mt-2 searching-for-claims">
-        Searching for claims…
+        Analysing…
       </h3>
       {% elif status == 'complete' %}
       <h3 class="mt-2">
