@@ -1,9 +1,9 @@
 import json
-from typing import Generator
+from typing import Any, Iterable
 
 import requests
 
-from health_misinfo_shared.vertex import process_video
+from health_misinfo_shared.fine_tuning import infer_claims
 from raphael_backend_flask.db import (
     create_claim_extraction_run,
     execute_sql,
@@ -30,24 +30,30 @@ def download_transcript(youtube_id: str) -> int:
     )
 
 
-def extract_claims(run: dict) -> Generator:
+def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
     sentences = json.loads(run["transcript"])
-    claims = process_video(run["id"], sentences)
+    inferred_claims = infer_claims(run["id"], sentences)
 
-    for claim in claims:
-        claim["raw_sentence_text"] = claim["sentence"]
-        execute_sql(
-            "INSERT INTO inferred_claims (run_id, claim, raw_sentence_text, label, offset_start_s, offset_end_s) VALUES (?, ?, ?, ?, ?, ?)",
-            (
-                run["id"],
-                claim["claim"],
-                claim["raw_sentence_text"],
-                "health",
-                claim["offset_start_s"],
-                claim["offset_end_s"],
-            ),
-        )
-        yield claim
+    for response in inferred_claims:
+        claims = response.get("response")
+        chunk = response.get("chunk")
+        for claim in claims:
+            label_str = json.dumps(claim.get("labels", {}))
+            checkworthiness = claim.get("labels", {}).get("summary", "na")
+            # checkworthiness will be one of "worth checking", "may be worth checking" or "not worth checking"
+            parsed_claim = {
+                "run_id": run["id"],
+                "claim": f"({checkworthiness}) " + claim["claim"],
+                "raw_sentence_text": chunk["text"],
+                "label": label_str,
+                "offset_start_s": float(chunk["start_offset"]),
+                "offset_end_s": float(chunk["end_offset"]),
+            }
+            execute_sql(
+                "INSERT INTO inferred_claims (run_id, claim, raw_sentence_text, label, offset_start_s, offset_end_s) VALUES (?, ?, ?, ?, ?, ?)",
+                tuple(parsed_claim.values()),
+            )
+            yield parsed_claim
 
     # Mark transcript done
     update_claim_extraction_run(run["id"], status="complete")
