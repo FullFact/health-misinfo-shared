@@ -77,7 +77,10 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
     claims_sql = execute_sql(
         "SELECT * FROM inferred_claims WHERE run_id = ?", (run_id,)
     )
-    claims = [dict(claim) for claim in claims_sql]
+    claims = [
+        {**claim, **{"label": json.loads(claim["label"])}}
+        for claim in claims_sql
+    ]
 
     if run["status"] == "processing":
         if claims:

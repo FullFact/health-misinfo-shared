@@ -38,21 +38,22 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
         claims = response.get("response")
         chunk = response.get("chunk")
         for claim in claims:
-            label_str = json.dumps(claim.get("labels", {}))
+            labels_dict = claim.get("labels", {})
             checkworthiness = claim.get("labels", {}).get("summary", "na")
             # checkworthiness will be one of "worth checking", "may be worth checking" or "not worth checking"
             parsed_claim = {
                 "run_id": run["id"],
-                "claim": f"({checkworthiness}) " + claim["claim"],
+                "claim": claim["claim"],
                 "raw_sentence_text": chunk["text"],
-                "label": label_str,
+                "label": json.dumps(labels_dict),
                 "offset_start_s": float(chunk["start_offset"]),
                 "offset_end_s": float(chunk["end_offset"]),
             }
             execute_sql(
-                "INSERT INTO inferred_claims (run_id, claim, raw_sentence_text, label, offset_start_s, offset_end_s) VALUES (?, ?, ?, ?, ?, ?)",
+                f"INSERT INTO inferred_claims ({', '.join(parsed_claim.keys())}) VALUES ({', '.join(['?'] * len(parsed_claim))})",
                 tuple(parsed_claim.values()),
             )
+            parsed_claim["label"] = labels_dict
             yield parsed_claim
 
     # Mark transcript done

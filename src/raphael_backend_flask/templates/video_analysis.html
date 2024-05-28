@@ -49,7 +49,9 @@
 
       <div class="list-group list-group-flush">
       {% for claim in claims %}
-        <a class="list-group-item list-group-item-action" title="{{ claim['raw_sentence_text'] }}" href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s" onclick="jumpTo(event, {{ claim['offset_start_s'] }}{% if claim['offset_end_s'] %}, {{ claim['offset_end_s'] }}{% endif %})">
+        <a class="list-group-item list-group-item-action
+        {% if claim['label']['summary'] == 'worth checking' %}list-group-item-danger{% elif claim['label']['summary'] == 'may be worth checking' %}list-group-item-warning{% endif %}"
+        title="{{ claim['raw_sentence_text'] }}" href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s" onclick="jumpTo(event, {{ claim['offset_start_s'] }}{% if claim['offset_end_s'] %}, {{ claim['offset_end_s'] }}{% endif %})">
           <strong>{{ loop.index }}.</strong> {{ claim['claim'] }}
 
           ({%- if claim['offset_start_s'] // 3600 -%}
