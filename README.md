@@ -47,11 +47,15 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 `get_video_responses()` uses a fine-tuned model to generate reponses to the transcript of a video.
 
+`construct_in_context_examples()` uses in-context learning (where the training data is included in the prompt) as an alternative to fine-tuning. It is faster, so good for iterating on prompt designs.
+
 ## Model types
 
 **simple-type** model: given a transcript, it is trained to return a list of harmful health-related claims 
 
 **explaination-type** model: given a transcript, it is trained to return a list of health-related claims with an explanation label predicting how checkworthy it is and why. These labels (for concepts like "high harm", "cites study" etc.) allow us to add expert knowledge into the training data.
+
+**multi-label** model: emulates fact checking expertise by identifying features of a claim, such as its readability, whether it is recommending actions and so on. These can later be used to predict checkworthiness.
 
 ## Deploy/update a server
 
