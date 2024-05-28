@@ -2,7 +2,7 @@
 # Though had a few issues with it..ascii
 
 from __future__ import annotations
-from typing import Generator, Optional
+from typing import Any, Iterable, Optional
 import json
 import pandas as pd
 from google.auth import default
@@ -264,7 +264,7 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
 
 def get_video_responses(
     model, chunks: list[str], multilabel: bool = False, in_context_examples: str = ""
-) -> Generator:
+) -> Iterable[dict[str, Any]]:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
     infer_prompt = (
@@ -427,7 +427,7 @@ def construct_in_context_examples(
     return examples, hold_out_set
 
 
-def infer_claims(video_id: str, transcript: list[dict]) -> Generator:
+def infer_claims(video_id: str, transcript: list[dict]) -> Iterable[dict[str, Any]]:
     """For use in app"""
     chunks = youtube_api.form_chunks(transcript)
     model = GenerativeModel("gemini-1.5-pro-preview-0514")

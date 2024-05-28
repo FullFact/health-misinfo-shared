@@ -1,5 +1,5 @@
 import json
-from typing import Generator
+from typing import Any, Iterable
 
 import requests
 
@@ -30,7 +30,7 @@ def download_transcript(youtube_id: str) -> int:
     )
 
 
-def extract_claims(run: dict) -> Generator:
+def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
     sentences = json.loads(run["transcript"])
     inferred_claims = infer_claims(run["id"], sentences)
 

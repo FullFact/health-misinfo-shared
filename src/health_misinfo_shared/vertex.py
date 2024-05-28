@@ -4,7 +4,7 @@ import json
 import csv
 import time
 import vertexai
-from typing import Generator
+from typing import Any, Iterable
 from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
 from health_misinfo_shared import youtube_api
@@ -50,7 +50,7 @@ def generate_reponse(transcript: str) -> list[dict]:
     return jsonl_obj
 
 
-def process_video(video_id: str, transcript: list[dict]) -> Generator:
+def process_video(video_id: str, transcript: list[dict]) -> Iterable[dict[str, Any]]:
     """Take the transcript of a single video and pass it to the LLM.
     Return a list of any claims found."""
 
