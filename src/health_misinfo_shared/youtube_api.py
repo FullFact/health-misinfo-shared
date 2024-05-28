@@ -107,28 +107,32 @@ def load_texts(folder) -> list[dict]:
 def form_chunks(transcript: list[dict]) -> Iterator[dict]:
     """Split/merged a list of sentences into series of overlapping text chunks.
     Each chunk is a dict containing the text and the start/end timestamps"""
-    current_chunk_text = ""
-    current_chunk_start_offset = 0.0
-    current_chunk_end_offset = 0.0
+
+    def chunk_length(chunk: list[dict]) -> int:
+        return sum((len(c["sentence_text"]) for c in chunk))
+
+    # chunks are at most this many characters long
+    max_chunk_size = 1500
+    # chunks have at most this many characters of overlap
+    overlap_size = 500
+
+    current_chunk = []
     for sentence in transcript:
-        current_chunk_text += sentence["sentence_text"] + " "
-        if len(current_chunk_text) > 1500:
-            current_chunk_end_offset = sentence["start"]
+        if current_chunk and chunk_length(current_chunk) + len(sentence["sentence_text"]) > max_chunk_size:
             yield {
-                "text": current_chunk_text,
-                "start_offset": current_chunk_start_offset,
-                "end_offset": current_chunk_end_offset,
+                "text": " ".join((c["sentence_text"] for c in current_chunk)),
+                "start_offset": current_chunk[0]["start"],
+                "end_offset": sentence["start"],
             }
-            # Keep the end of this chunk as the start of the next...
-            current_chunk_text = current_chunk_text[-500:]
-            # ...but remove the first (probably incomplete) word
-            current_chunk_text[current_chunk_text.index(" ") :].strip()
-            current_chunk_start_offset = sentence["start"]
-    current_chunk_end_offset = sentence["start"]
+            while chunk_length(current_chunk) > overlap_size:
+                # discard sentences from the start, until the chunk has
+                # fewer than `overlap_size` characters
+                current_chunk = current_chunk[1:]
+        current_chunk.append(sentence)
     yield {
-        "text": current_chunk_text,
-        "start_offset": current_chunk_start_offset,
-        "end_offset": current_chunk_end_offset,
+        "text": " ".join((c["sentence_text"] for c in current_chunk)),
+        "start_offset": current_chunk[0]["start"],
+        "end_offset": None,
     }
 
 
