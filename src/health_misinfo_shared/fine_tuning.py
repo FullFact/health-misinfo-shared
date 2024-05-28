@@ -429,6 +429,8 @@ def construct_in_context_examples(
 
 def infer_claims(video_id: str, transcript: list[dict]) -> Iterable[dict[str, Any]]:
     """For use in app"""
+    vertexai.init(project=GCP_PROJECT_ID, location=GCP_TUNED_MODEL_LOCATION)
+
     chunks = youtube_api.form_chunks(transcript)
     model = GenerativeModel("gemini-1.5-pro-preview-0514")
     annotated_data_files = [
