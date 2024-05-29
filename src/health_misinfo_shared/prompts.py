@@ -151,7 +151,8 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
             4 - Return a list of JSON format output as follows:
                         [
                             {
-                                "claim": <claim being made in the sentence>,
+                                "claim": <claim being made in the sentence. You can reword it slightly to make it make sense without context, but do not change the meaning of the claim in doing so.>,
+                                "original_text": <the original sentence, exactly as it appears in the input, containing the claim>,
                                 "labels":
                                     {
                                         "understandability": <one of these labels: "understandable", "not understandable">,
@@ -230,7 +231,8 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
             5 - Return a list of JSON format output as follows:
                         [
                             {
-                                "claim": <claim being made in the sentence>,
+                                "claim": <claim being made in the sentence. You can reword it slightly to make it make sense without context, but do not change the meaning of the claim in doing so.>,
+                                "original_text": <the original sentence, exactly as it appears in the input, containing the claim>,
                                 "labels":
                                     {
                                         "understandability": <one of these labels: "understandable", "not understandable">,
