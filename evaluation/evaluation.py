@@ -172,16 +172,16 @@ def call_api(
 
 
 if __name__ == "__main__":
-    persona = "doctor"
+    from health_misinfo_shared.prompts import HEALTH_INFER_MULTI_LABEL_PROMPT
+
     text = """
     There are 3 valves inside the heart. The biggest is the aorta. This is the main part that can go wrong.
     """
     result = call_api(
-        prompt=f"You are a {persona}. Give me a raw json encoded list of health claims in the following text: {text}",
+        prompt=f"{HEALTH_INFER_MULTI_LABEL_PROMPT}\n\n{text}",
         options={},
         context={
             "vars": {
-                "persona": persona,
                 "text": text,
             }
         },
