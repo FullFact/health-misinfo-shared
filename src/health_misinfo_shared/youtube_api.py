@@ -10,7 +10,7 @@ import re
 import json
 import string
 from pathlib import Path
-from typing import Iterator
+from typing import Iterable
 import requests
 from langdetect import detect
 import google_auth_oauthlib.flow
@@ -105,7 +105,7 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript: list[dict]) -> Iterator[dict]:
+def form_chunks(transcript: list[dict]) -> Iterable[dict]:
     """Split/merged a list of sentences into series of overlapping text chunks.
     Each chunk is a dict containing the text and the start/end timestamps"""
 

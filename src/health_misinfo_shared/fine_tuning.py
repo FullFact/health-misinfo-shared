@@ -263,7 +263,7 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
 
 
 def get_video_responses(
-    model, chunks: list[str], multilabel: bool = False, in_context_examples: str = ""
+    model, chunks: Iterable[dict[str, Any]], multilabel: bool = False, in_context_examples: str = ""
 ) -> Iterable[dict[str, Any]]:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
