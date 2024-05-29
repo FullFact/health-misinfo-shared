@@ -54,10 +54,7 @@
         title="{{ claim['raw_sentence_text'] }}" href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s" onclick="jumpTo(event, {{ claim['offset_start_s'] }}{% if claim['offset_end_s'] %}, {{ claim['offset_end_s'] }}{% endif %})">
           <strong>{{ loop.index }}.</strong> {{ claim['claim'] }}
 
-          ({%- if claim['offset_start_s'] // 3600 -%}
-            {{ '%02d' % (claim['offset_start_s'] // 3600) }}:
-          {%- endif -%}
-          {{ '%02d' % (claim['offset_start_s'] % 3600 // 60) }}:{{ '%02d' % (claim['offset_start_s'] % 60) }})
+          {{ claim['offset_start_s'] | format_offset }}
         </a>
       {% endfor %}
       </div>

@@ -1,5 +1,7 @@
 from dotenv import find_dotenv, load_dotenv
 
+from raphael_backend_flask.template_filters import format_offset
+
 try:
     load_dotenv(find_dotenv())
 except Exception:
@@ -18,6 +20,7 @@ app = Flask(__name__)
 CORS(app)
 app.register_blueprint(routes)
 app.secret_key = os.urandom(12).hex()
+app.jinja_env.filters["format_offset"] = format_offset
 
 
 @app.teardown_appcontext
