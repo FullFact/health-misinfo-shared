@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if status == 'processing' %}
+<div class="alert alert-info text-center fixed-bottom mb-0 searching-for-claims" role="alert">
+  <div class="spinner-border spinner-grow-sm" role="status" style="border-width: .1rem;"></div> Analysing…
+</div>
+{% endif %}
+
+<div class="container mt-2 mb-6">
+  <div class="row justify-content-center sticky-top bg-white">
+    <div class="col-lg-6 my-4 text-center">
+      <div id="player"></div>
+      <script async type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
+      <script>
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          width: '400px',
+          height: '200px',
+          videoId: '{{ youtube_id }}',
+          playerVars: {
+            'playsinline': 1
+          }
+        });
+      }
+
+      function jumpTo(ev, start, end) {
+        ev.preventDefault();
+        player.loadVideoById({'videoId': '{{ youtube_id }}', 'startSeconds': start, 'endSeconds': end});
+        return false;
+      }
+      </script>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col">
+      {% if status == 'processing' %}
+      <h3 class="mt-2 searching-for-claims">
+        Analysing…
+      </h3>
+      {% elif status == 'complete' %}
+      <h3 class="mt-2">
+        {{ claims | count }} claims found
+      </h3>
+      {% endif %}
+
+      <div class="list-group list-group-flush">
+      {% for claim in claims %}
+        <a class="list-group-item list-group-item-action mx-n2
+        {% if claim['label']['summary'] == 'worth checking' %}list-group-item-danger{% elif claim['label']['summary'] == 'may be worth checking' %}list-group-item-warning{% endif %}"
+        style="width:calc(100% + 2rem);"
+        title="{{ claim['raw_sentence_text'] }}"
+        href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s"
+        onclick="jumpTo(event, {{ claim['offset_start_s'] }}{% if claim['offset_end_s'] %}, {{ claim['offset_end_s'] }}{% endif %})">
+          <strong>{{ loop.index }}.</strong> {{ claim['claim'] }}
+
+          {{ claim['offset_start_s'] | format_offset }}
+        </a>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if status == 'processing' %}
+<div class="alert alert-success text-center fixed-bottom mb-0 fade show" role="alert">
+  Done.
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
+<style type="text/css">
+  .searching-for-claims { display: none; }
+</style>
+{% endblock %}

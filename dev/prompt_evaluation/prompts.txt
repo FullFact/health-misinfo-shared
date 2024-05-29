@@ -1,0 +1,1 @@
+You are a {{persona}}. Give me a raw json encoded list of health claims in the following text: {{text}}

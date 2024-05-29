@@ -104,18 +104,36 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript: list[dict]) -> Iterator[str]:
-    """Split/merged a list of sentences into series of overlapping text chunks."""
-    current_chunk_text = ""
+def form_chunks(transcript: list[dict]) -> Iterator[dict]:
+    """Split/merged a list of sentences into series of overlapping text chunks.
+    Each chunk is a dict containing the text and the start/end timestamps"""
+
+    def chunk_length(chunk: list[dict]) -> int:
+        return sum((len(c["sentence_text"]) for c in chunk))
+
+    # chunks are at most this many characters long
+    max_chunk_size = 1500
+    # chunks have at most this many characters of overlap
+    overlap_size = 500
+
+    current_chunk = []
     for sentence in transcript:
-        current_chunk_text += sentence["sentence_text"] + " "
-        if len(current_chunk_text) > 5000:
-            yield current_chunk_text
-            # Keep the end of this chunk as the start of the next...
-            current_chunk_text = current_chunk_text[-500:]
-            # ...but remove the first (probably incomplete) word
-            current_chunk_text[current_chunk_text.index(" ") :].strip()
-    yield current_chunk_text
+        if current_chunk and chunk_length(current_chunk) + len(sentence["sentence_text"]) > max_chunk_size:
+            yield {
+                "text": " ".join((c["sentence_text"] for c in current_chunk)),
+                "start_offset": current_chunk[0]["start"],
+                "end_offset": sentence["start"],
+            }
+            while chunk_length(current_chunk) > overlap_size:
+                # discard sentences from the start, until the chunk has
+                # fewer than `overlap_size` characters
+                current_chunk = current_chunk[1:]
+        current_chunk.append(sentence)
+    yield {
+        "text": " ".join((c["sentence_text"] for c in current_chunk)),
+        "start_offset": current_chunk[0]["start"],
+        "end_offset": None,
+    }
 
 
 def download_captions(
@@ -130,6 +148,7 @@ def download_captions(
     already_exists = len(existing_captions.get("sentences", [])) > 0
     if not already_exists:
         captions = get_captions(video_id, video_title=video_title, query=query)
+        # captions['sentences'] is a list of dicts {"start": <offset, seconds>, "sentence_text": <text>}
         if captions:
             target_dir = f"data/captions/{folder}"
             Path(target_dir).mkdir(parents=True, exist_ok=True)
@@ -298,5 +317,7 @@ def multi_issue_search():
 
 
 if __name__ == "__main__":
-    multi_issue_search()
-    print()
+    # multi_issue_search()
+    # print()
+
+    download_captions("o9AEPKn4MMI", "dc_test_timestamp")

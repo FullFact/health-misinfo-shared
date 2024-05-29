@@ -4,6 +4,7 @@ import json
 import csv
 import time
 import vertexai
+from typing import Any, Iterable
 from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
 from health_misinfo_shared import youtube_api
@@ -49,23 +50,24 @@ def generate_reponse(transcript: str) -> list[dict]:
     return jsonl_obj
 
 
-def process_video(video_id: str, transcript: list[dict]) -> list[dict]:
+def process_video(video_id: str, transcript: list[dict]) -> Iterable[dict[str, Any]]:
     """Take the transcript of a single video and pass it to the LLM.
     Return a list of any claims found."""
-    llm_responses = []
 
     chunks = youtube_api.form_chunks(transcript)
     for _id, chunk in enumerate(chunks):
         try:
-            llm_response = generate_reponse(chunk)
+            llm_response = generate_reponse(chunk["text"])
             for found_claim in llm_response:
                 found_claim["video_id"] = video_id
-                found_claim["chunk"] = chunk
-                llm_responses.append(found_claim)
+                found_claim["chunk"] = chunk["text"]
+                found_claim["offset_start_s"] = float(chunk["start_offset"])
+                found_claim["offset_end_s"] = float(chunk["end_offset"])
+                print(found_claim)
+                yield found_claim
         except Exception as e:
             # just carry on for now...
             print(e)
-    return llm_responses
 
 
 def generate_training_set(folders: list[str], label: str):
@@ -107,4 +109,9 @@ if __name__ == "__main__":
         "prostate_cancer_nat_rem",
         "weight_loss_nat_rem",
     ]
-    generate_training_set(_folders, label="natural_remedies_x5")
+    # generate_training_set(_folders, label="natural_remedies_x5")
+    all_videos_in_folder = youtube_api.load_texts(_folders[0])
+    for video in all_videos_in_folder:
+        video_id = video[0]["video_id"]
+        llm_response = process_video(video_id, video)
+        print(llm_response)
