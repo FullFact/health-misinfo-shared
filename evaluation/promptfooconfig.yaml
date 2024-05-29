@@ -1,6 +1,9 @@
-# This configuration compares LLM output of 2 prompts x 2 GPT models across 3 test cases.
+# This generic configuration which uses the python script evaluation.py as it's LLM.
+# Prompts are taken from the specified text files.
+# Tests are taken from tests.csv
+# Instructions in the readme.
 # Learn more: https://promptfoo.dev/docs/configuration/guide
-description: 'Health Prompt Eval'
+description: 'Raphael Eval'
 
 prompts:
   - file://prompt_no_context.txt
@@ -8,7 +11,7 @@ prompts:
 
 providers:
   - id: 'python:evaluation.py'
-    label: 'Test script 1'   # Optional display label for this provider
+    label: 'Python Gemini Script'   # Optional display label for this provider
     # config:
     #   pythonExecutable: *can set the python executable if you want, but I've just been making sure I'm in the right venv.*
 
