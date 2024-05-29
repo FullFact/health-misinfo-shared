@@ -45,7 +45,7 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
                 "run_id": run["id"],
                 "claim": claim["claim"],
                 "raw_sentence_text": chunk["text"],
-                "label": json.dumps(labels_dict),
+                "labels": json.dumps(labels_dict),
                 "offset_start_s": float(chunk["start_offset"]),
             }
             if chunk["end_offset"] is not None:
@@ -54,7 +54,7 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
                 f"INSERT INTO inferred_claims ({', '.join(parsed_claim.keys())}) VALUES ({', '.join(['?'] * len(parsed_claim))})",
                 tuple(parsed_claim.values()),
             )
-            parsed_claim["label"] = labels_dict
+            parsed_claim["labels"] = labels_dict
             yield parsed_claim
 
     # Mark transcript done

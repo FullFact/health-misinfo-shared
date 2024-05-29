@@ -78,7 +78,7 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
         "SELECT * FROM inferred_claims WHERE run_id = ?", (run_id,)
     )
     claims = [
-        {**claim, **{"label": json.loads(claim["label"])}}
+        {**claim, **{"labels": json.loads(claim["labels"])}}
         for claim in claims_sql
     ]
 
@@ -107,11 +107,11 @@ def delete_run(run_id: int) -> ResponseReturnValue:
 def create_training_claim() -> ResponseReturnValue:
     data = request.get_json()
     execute_sql(
-        "INSERT INTO training_claims (youtube_id, claim, label) VALUES (?, ?, ?)",
+        "INSERT INTO training_claims (youtube_id, claim, labels) VALUES (?, ?, ?)",
         (
             data["youtube_id"],
             data["claim"],
-            data["label"],
+            data["labels"],
         ),
     )
     return jsonify(data), 201

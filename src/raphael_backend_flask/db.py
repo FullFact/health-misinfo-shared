@@ -81,6 +81,7 @@ def update_claim_extraction_run(
     )
 
 
+# Note that metadata and transcript contain JSON data
 table_youtube_videos = """
     CREATE TABLE youtube_videos (
         id TEXT PRIMARY KEY,
@@ -100,25 +101,27 @@ table_claim_extraction_runs = """
     );
     """
 
+# Note that labels contains JSON data
 table_inferred_claims = """
     CREATE TABLE inferred_claims (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id INTEGER,
         claim TEXT,
         raw_sentence_text TEXT,
-        label TEXT,
+        labels TEXT,
         offset_start_s REAL,
         offset_end_s REAL,
         FOREIGN KEY (run_id) REFERENCES claim_extraction_runs (id)
     );
     """
 
+# Note that labels contains JSON data
 table_training_claims = """
     CREATE TABLE training_claims (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         youtube_id TEXT,
         claim TEXT,
-        label TEXT
+        labels TEXT
     );
     """
 
