@@ -44,7 +44,7 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
             parsed_claim = {
                 "run_id": run["id"],
                 "claim": claim["claim"],
-                "raw_sentence_text": chunk["text"],
+                "raw_sentence_text": claim["original_text"],
                 "labels": json.dumps(labels_dict),
                 "offset_start_s": float(chunk["start_offset"]),
             }
