@@ -11,7 +11,7 @@ RUN poetry config virtualenvs.create false \
 COPY src/health_misinfo_shared ./health_misinfo_shared
 COPY src/raphael_backend_flask ./raphael_backend_flask
 COPY .env ./.env
-RUN mkdir data
+COPY data ./data
 
 EXPOSE 3000
 
