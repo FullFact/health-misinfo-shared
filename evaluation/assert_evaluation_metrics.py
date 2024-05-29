@@ -7,7 +7,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from rouge_score import rouge_scorer
 
 
-CHECKWORTHY_EXPLANATIONS = ["high harm", "citation", "low harm"]
+CHECKWORTHY_SUMMARIES = ["worth checking", "may be worth checking"]
 
 
 def closest_rouge(pred: str, targs: list[str]) -> float:
@@ -38,7 +38,7 @@ def make_results_table(
     results = []
     for generated_claim in generated_output:
         response_claim = generated_claim["claim"]
-        response_explanation = generated_claim["explanation"]
+        response_explanation = generated_claim["labels"]["summary"]
 
         targs = [claim["claim"] for claim in expected_output]
 
@@ -49,7 +49,9 @@ def make_results_table(
         }
         if best_idx >= 0:
             this_result["target_claim"] = targs[best_idx]
-            this_result["target_explanation"] = expected_output[best_idx]["explanation"]
+            this_result["target_explanation"] = expected_output[best_idx]["labels"][
+                "summary"
+            ]
         else:
             this_result["target_claim"] = ""
             this_result["target_explanation"] = ""
@@ -63,7 +65,7 @@ def make_results_table(
             # Add in any targets that were not matched by this batch of responses
             this_result = {
                 "target_claim": expected_claim["claim"],
-                "target_explanation": expected_claim["explanation"],
+                "target_explanation": expected_claim["labels"]["summary"],
                 "response_claim": "",
                 "response_explanation": "",
             }
@@ -80,13 +82,12 @@ def evaluate(results: pd.DataFrame) -> dict[str, Any]:
     # We need to check the label type: if the response is missing, replace it with "nothing to check"
     # Then map reponse_explanation and target_expalnation onto CHECKWORTHY_EXPLANATIONS or UNCHECKWORTHY_EXPLANATIONS
     # and then calculate TP,FP etc.
-    checkworthy_pattern = "|".join(CHECKWORTHY_EXPLANATIONS)
     # List of claims that should have been labelled as True (=Checkworthy)
-    cw_targ = results["target_explanation"].str.contains(checkworthy_pattern)
+    cw_targ = results["target_explanation"].isin(CHECKWORTHY_SUMMARIES)
     cw_targ = cw_targ.fillna(False)
 
     # List of claims that were labelled by the model as True (=Checkworthy)
-    cw_response = results["response_explanation"].str.contains(checkworthy_pattern)
+    cw_response = results["response_explanation"].isin(CHECKWORTHY_SUMMARIES)
     cw_response = cw_response.fillna(False)
 
     # Optionally store ressults in a table:
@@ -122,16 +123,102 @@ def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str,
 if __name__ == "__main__":
     test_generated_output = """
     [
-        {"claim": "the sky is blue", "explanation": "low harm"},
-        {"claim": "mushrooms cure cancer", "explanation": "high harm"}
+        {
+            "claim": "The sky is blue.",
+            "original_text": "As we all know, it is blue",
+            "labels":
+                {
+                    "understandability": "understandable",
+                    "type_of_claim": "statement of fact",
+                    "type_of_medical_claim": "not medical",
+                    "support": "uncontroversial statement",
+                    "harm": "harmless",
+                    "summary": "not worth checking"
+                }
+        },
+        {
+            "claim": "mushrooms cure cancer",
+            "original_text": "mushrooms cure cancer",
+            "labels":
+                {
+                    "understandability": "understandable",
+                    "type_of_claim": "statement of fact",
+                    "type_of_medical_claim": "cause/effect",
+                    "support": "novel claim",
+                    "harm": "high harm",
+                    "summary": "worth checking"
+                }
+        },
+        {
+            "claim": "Eating walnuts will make you live longer",
+            "original_text": "Eating walnuts will make you live longer",
+            "labels":
+                {
+                    "understandability": "understandable",
+                    "type_of_claim": "statement of fact",
+                    "type_of_medical_claim": "cause/effect",
+                    "support": "novel claim",
+                    "harm": "low harm",
+                    "summary": "may be worth checking"
+                }
+        }
     ]
     """.strip()
 
     test_expected_output = """
     [
-        {"claim": "the sky is blue", "explanation": "low harm"},
-        {"claim": "mushrooms can cure cancer", "explanation": "high harm"},
-        {"claim": "I have a dog called Geoff", "explanation": "nothing to check"}
+        {
+            "claim": "The sky is blue.",
+            "original_text": "As we all know, it is blue",
+            "labels":
+                {
+                    "understandability": "understandable",
+                    "type_of_claim": "statement of fact",
+                    "type_of_medical_claim": "not medical",
+                    "support": "uncontroversial statement",
+                    "harm": "harmless",
+                    "summary": "not worth checking"
+                }
+        },
+        {
+            "claim": "mushrooms cure cancer",
+            "original_text": "mushrooms cure cancer",
+            "labels":
+                {
+                    "understandability": "understandable",
+                    "type_of_claim": "statement of fact",
+                    "type_of_medical_claim": "cause/effect",
+                    "support": "novel claim",
+                    "harm": "high harm",
+                    "summary": "worth checking"
+                }
+        },
+        {
+            "claim": "The writer has a dog called Geoff",
+            "original_text": "I have a dog called Geoff",
+            "labels":
+                {
+                    "understandability": "understandable",
+                    "type_of_claim": "statement of fact",
+                    "type_of_medical_claim": "not medical",
+                    "support": "uncontroversial statement",
+                    "harm": "harmless",
+                    "summary": "not worth checking"
+                }
+        },
+        {
+            "claim": "Eating walnuts will make you live longer",
+            "original_text": "Eating walnuts will make you live longer",
+            "labels":
+                {
+                    "understandability": "understandable",
+                    "type_of_claim": "statement of fact",
+                    "type_of_medical_claim": "cause/effect",
+                    "support": "novel claim",
+                    "harm": "low harm",
+                    "summary": "may be worth checking"
+                }
+        }
     ]
     """.strip()
 
