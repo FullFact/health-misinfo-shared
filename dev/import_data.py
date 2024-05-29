@@ -1,20 +1,18 @@
-# Read some CSV files with labelled data, and insert into local db.
-# Makes most sense to populate an empty db
+# Read some CSV files with labelled training data, and insert into *local db*.
+
 import base64
 import json
 import requests
 import pandas as pd
 
 
-# First run React back end locally, e.g. with:
-# PYTHONPATH=src USERS=UUUU:PPPP poetry run python -m raphael_backend_flask.app
-# Then put the same username, password below
-# Then run this script.
-# Might want to call @app.delete("/api/training_claims/<string:id>") for each video id before inserting new data?
-
-REACT_APP_BASE_URL = "http://localhost:3000/api"
+BASE_URL = "http://localhost:3000/"
+# See the README file for how to start flask development server locally; then set up username & password as specified there.
+username = "<REPLACE>"
+password = "<REPLACE>"
 username = "ff"
 password = "changeme"
+
 auth_header = base64.b64encode(f"{username}:{password}".encode()).decode()
 headers = {
     "Content-Type": "application/json",
@@ -28,27 +26,29 @@ def read_file(fn: str) -> pd.DataFrame:
 
 
 def view_training_claims():
-    """Load/display first few records"""
-    url = REACT_APP_BASE_URL + "/all_training_claims"
-    response = requests.get(url, headers=headers)
+    """Load/display a few records, just to show what's working"""
+    url = BASE_URL + "/api/all_training_claims"
+    response = requests.get(url, json={}, headers=headers)
     training = response.json()
     print(f"Found {len(training)} training claims. Last few:")
     for i in range(min(5, len(training))):
         print(training[-i])
 
 
-def insert_training_claim(video_id: str, claim: str, label: str, offset_s: float):
+def insert_training_claim(video_id: str, claim: str, label: str):
     """Insert a single training claim"""
     json_data = {
-        "video_id": video_id,
+        "youtube_id": video_id,
         "claim": claim,
-        "label": json.dumps(label),
-        "offset_s": offset_s,
+        "labels": json.dumps(label),
     }
-
-    response = requests.post(
-        REACT_APP_BASE_URL + "/training_claims", json=json_data, headers=headers
-    )
+    try:
+        response = requests.post(
+            BASE_URL + "api/training_claims", json=json_data, headers=headers
+        )
+    except Exception as e:
+        print("Failed to insert row: ", json_data)
+        print(e)
 
 
 def insert_rows_from_file(filename: str) -> None:
@@ -60,11 +60,15 @@ def insert_rows_from_file(filename: str) -> None:
             row.get("video_id", "no_video_id"),
             row["output_text"],
             {"harm": row["harm"], "understandability": row["understandability"]},
-            float(row.get("offset_s", 0.0)),
+            # float(row.get("offset_s", 0.0)),
         )
 
 
 if __name__ == "__main__":
 
-    insert_rows_from_file("data/MVP_labelled_claims_1.csv")
+    view_training_claims()
+
+    for data_file in [1, 2, 3, 4]:
+        insert_rows_from_file(f"data/MVP_labelled_claims_{data_file}.csv")
+
     view_training_claims()

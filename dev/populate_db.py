@@ -1,24 +1,31 @@
 # Pass a set of videos through the app.
 # Handy for end-to-end testing or populating an empty database.
-import base64
-import requests
+# import base64
+# import requests
+from flask import (
+    jsonify,
+    redirect,
+    request,
+    url_for,
+)
+from raphael_backend_flask.routes import post_youtube_url
 
-
-REACT_APP_BASE_URL = "http://localhost:3000/api"
-username = "ff"
-password = "changeme"
-auth_header = base64.b64encode(f"{username}:{password}".encode()).decode()
-headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Basic {auth_header}",
-}
+# REACT_APP_BASE_URL = "http://localhost:3000/api"
+# username = "ff"
+# password = "changeme"
+# auth_header = base64.b64encode(f"{username}:{password}".encode()).decode()
+# headers = {
+#     "Content-Type": "application/json",
+#     "Authorization": f"Basic {auth_header}",
+# }
 
 
 def process_video(video_id: str):
-    url = REACT_APP_BASE_URL + "/transcripts"
+    # url = REACT_APP_BASE_URL + "/transcripts"
 
-    response = requests.post(url, json={"id": video_id}, headers=headers)
-    print("Processed video: ", response.json())
+    # response = requests.post(url, json={"id": video_id}, headers=headers)
+    # print("Processed video: ", response.json())
+    post_youtube_url()
 
 
 if __name__ == "__main__":

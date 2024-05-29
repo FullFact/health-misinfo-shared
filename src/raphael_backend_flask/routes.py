@@ -78,8 +78,7 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
         "SELECT * FROM inferred_claims WHERE run_id = ?", (run_id,)
     )
     claims = [
-        {**claim, **{"labels": json.loads(claim["labels"])}}
-        for claim in claims_sql
+        {**claim, **{"labels": json.loads(claim["labels"])}} for claim in claims_sql
     ]
 
     if run["status"] == "processing":
@@ -123,6 +122,13 @@ def get_training_claims(youtube_id: str) -> ResponseReturnValue:
     claims = execute_sql(
         "SELECT * FROM training_claims WHERE youtube_id = ?", (youtube_id,)
     )
+    return jsonify([{**c} for c in claims]), 200
+
+
+@routes.get("/api/all_training_claims/")
+@auth.login_required
+def get_all_training_claims() -> ResponseReturnValue:
+    claims = execute_sql("SELECT * FROM training_claims")
     return jsonify([{**c} for c in claims]), 200
 
 
