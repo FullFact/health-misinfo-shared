@@ -42,12 +42,13 @@ def make_tests_file():
     eval_data = (
         training_data.groupby("chunk")
         .apply(
-            lambda sub_df: [
-                json.dumps(
-                    {"claim": row["claim"], "explanation": row["explanation"]}, indent=4
-                )
-                for idx, row in sub_df.iterrows()
-            ]
+            lambda sub_df: json.dumps(
+                [
+                    {"claim": row["claim"], "explanation": row["explanation"]}
+                    for idx, row in sub_df.iterrows()
+                ],
+                indent=4,
+            )
         )
         .reset_index()
     )
