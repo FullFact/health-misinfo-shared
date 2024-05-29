@@ -63,7 +63,6 @@ def process_video(video_id: str, transcript: list[dict]) -> Iterable[dict[str, A
                 found_claim["chunk"] = chunk["text"]
                 found_claim["offset_start_s"] = float(chunk["start_offset"])
                 found_claim["offset_end_s"] = float(chunk["end_offset"])
-                print(found_claim)
                 yield found_claim
         except Exception as e:
             # just carry on for now...
