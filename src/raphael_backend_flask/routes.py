@@ -73,6 +73,7 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
 
     run = dict(runs[0])
     run["metadata"] = json.loads(run["metadata"])
+    run["transcript"] = json.loads(run["transcript"])
 
     claims_sql = execute_sql(
         "SELECT * FROM inferred_claims WHERE run_id = ?", (run_id,)

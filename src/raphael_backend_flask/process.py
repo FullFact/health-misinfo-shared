@@ -31,7 +31,7 @@ def download_transcript(youtube_id: str) -> int:
 
 
 def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
-    sentences = json.loads(run["transcript"])
+    sentences = run["transcript"]
     inferred_claims = infer_claims(run["id"], sentences)
 
     for response in inferred_claims:
