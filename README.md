@@ -92,3 +92,41 @@ We introduce all prompts with a persona, outlining that the model will be acting
 > You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
 >
 > You would always rather say that you do not know the answer than say something which might be incorrect.
+
+## Database schema
+
+```mermaid
+erDiagram
+  youtube_videos ||--o{ claim_extraction_runs : runs
+  youtube_videos {
+    text id
+    text metadata
+    text transcript
+  }
+
+  claim_extraction_runs ||--o{ inferred_claims : claims
+  claim_extraction_runs {
+    integer id PK
+    text youtube_id FK
+    text model
+    text status
+    integer timestamp
+  }
+
+  inferred_claims {
+    integer id PK
+    integer run_id FK
+    text claim
+    text raw_sentence_text
+    text labels
+    real offset_start_s
+    real offset_end_s
+  }
+
+  training_claims {
+    integer id PK
+    text youtube_id
+    text claim
+    text labels
+  }
+```
