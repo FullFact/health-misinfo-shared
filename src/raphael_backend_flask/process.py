@@ -46,10 +46,10 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
                 "claim": claim["claim"],
                 "raw_sentence_text": claim["original_text"],
                 "labels": json.dumps(labels_dict),
-                "offset_start_s": float(chunk["start_offset"]),
+                "offset_start_s": chunk["start_offset"],
             }
             if chunk["end_offset"] is not None:
-                parsed_claim["offset_end_s"] = float(chunk["end_offset"])
+                parsed_claim["offset_end_s"] = chunk["end_offset"]
             execute_sql(
                 f"INSERT INTO inferred_claims ({', '.join(parsed_claim.keys())}) VALUES ({', '.join(['?'] * len(parsed_claim))})",
                 tuple(parsed_claim.values()),

@@ -23,6 +23,7 @@ YT_CREDENTIALS = None
 
 def clean_str(d: dict) -> dict:
     d["sentence_text"] = d["sentence_text"].replace("&amp;#39;", "'")
+    d["start"] = float(d["start"])
     return d
 
 
