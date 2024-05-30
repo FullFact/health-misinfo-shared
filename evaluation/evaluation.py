@@ -1,5 +1,6 @@
 import json
 import time
+import pprint
 from typing import Any
 from dataclasses import dataclass
 
@@ -136,7 +137,8 @@ def run_prompt(model: GenerativeModel, prompt: str) -> str:
 
     try:
         candidate = response.candidates[0]
-        return candidate.text
+        output_dict = parse_model_json_output(candidate.text)
+        return json.dumps(output_dict, indent=4)
     except Exception as e:
         raise ParsingException(
             f"Could not handle output. It is not in correct json format. Original error: {repr(e)}"
@@ -154,7 +156,7 @@ def call_api(
 
     # persona = parsed_context.vars.get("persona", None)
     chunk = parsed_context.vars.get("chunk", None)
-    print(f"Prompt: {prompt[:500]}", end="\n\n")
+    # print(f"Prompt: {prompt[:500]}", end="\n\n")
     # print(f"Persona: {persona}\nText Preview: {text[:500]}")
 
     model: GenerativeModel = load_model()
@@ -187,4 +189,4 @@ if __name__ == "__main__":
         },
     )
 
-    print(result)
+    pprint.pp(result)
