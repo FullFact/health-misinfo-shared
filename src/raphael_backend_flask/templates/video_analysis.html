@@ -72,6 +72,13 @@
     <span aria-hidden="true">&times;</span>
   </button>
 </div>
+{% elif status == 'incomplete' %}
+<div class="alert alert-warning text-center fixed-bottom mb-0 fade show" role="alert">
+  This analysis may be incomplete.
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
 {% endif %}
 
 <style type="text/css">
