@@ -35,7 +35,7 @@ def refine_offsets(claim: dict, transcript: dict) -> dict:
     start_idx = 0
     while claim["offset_start_s"] < transcript[start_idx]["start"]:
         start_idx += 1
-    if claim["offset_end_s"] is not None:
+    if claim.get("offset_end_s") is not None:
         end_idx = start_idx
         while claim["offset_end_s"] > transcript[end_idx]["start"]:
             end_idx += 1
