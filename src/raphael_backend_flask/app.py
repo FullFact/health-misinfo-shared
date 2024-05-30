@@ -1,6 +1,6 @@
 from dotenv import find_dotenv, load_dotenv
 
-from raphael_backend_flask.template_filters import format_offset
+from raphael_backend_flask.template_filters import format_offset, time_diff
 
 try:
     load_dotenv(find_dotenv())
@@ -21,6 +21,7 @@ CORS(app)
 app.register_blueprint(routes)
 app.secret_key = os.urandom(12).hex()
 app.jinja_env.filters["format_offset"] = format_offset
+app.jinja_env.filters["time_diff"] = time_diff
 
 
 @app.teardown_appcontext

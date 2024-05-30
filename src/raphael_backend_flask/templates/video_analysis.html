@@ -67,7 +67,7 @@
 
 {% if status == 'processing' %}
 <div class="alert alert-success text-center fixed-bottom mb-0 fade show" role="alert">
-  Done.
+  Done. Elapsed time: {{ started | time_diff }} seconds.
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>

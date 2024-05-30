@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 
 from flask import (
@@ -92,6 +93,7 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
     return stream_template(
         "video_analysis.html",
         claims=claims,
+        started=datetime.now(),
         **run,
     )
 
