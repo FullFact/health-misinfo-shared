@@ -34,7 +34,7 @@ def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str,
     generated_output = json.loads(output)
 
     quote_in_chunk = [
-        check_quote_in_chunk(claim["original_text"], variables["text"])
+        check_quote_in_chunk(claim["original_text"], variables["chunk"])
         for claim in generated_output
     ]
 
@@ -48,7 +48,7 @@ def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str,
         "reason": (
             "Quotes are all contained in chunk"
             if passes
-            else make_reason(generated_output, quote_in_chunk, variables["text"])
+            else make_reason(generated_output, quote_in_chunk, variables["chunk"])
         ),
     }
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         test_generated_output,
         context={
             "prompt": "PROMPT",
-            "vars": {"text": positive_test_chunk},
+            "vars": {"chunk": positive_test_chunk},
         },
     )
     pp(output)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         test_generated_output,
         context={
             "prompt": "PROMPT",
-            "vars": {"text": negative_test_chunk},
+            "vars": {"chunk": negative_test_chunk},
         },
     )
     pp(output)
