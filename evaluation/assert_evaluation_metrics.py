@@ -114,9 +114,9 @@ def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str,
 
     # This return is an example GradingResult dict
     return {
-        "pass": metrics["f1"] > 0.5,
-        "score": metrics["f1"],
-        "reason": json.dumps(metrics, indent=4),
+        "pass": bool(metrics["f1"] > 0.5),
+        "score": float(metrics["f1"]),
+        "reason": pprint.pformat(metrics),
     }
 
 
