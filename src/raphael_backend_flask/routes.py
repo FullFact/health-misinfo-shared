@@ -30,6 +30,7 @@ def get_home() -> ResponseReturnValue:
         FROM claim_extraction_runs, youtube_videos
         WHERE youtube_id = youtube_videos.id
         ORDER BY timestamp DESC
+        LIMIT 20
     """
     )
     return render_template(
