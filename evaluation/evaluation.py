@@ -1,6 +1,7 @@
 import json
 import time
 import pprint
+import logging
 from typing import Any
 from dataclasses import dataclass
 
@@ -140,9 +141,10 @@ def run_prompt(model: GenerativeModel, prompt: str) -> str:
         output_dict = parse_model_json_output(candidate.text)
         return json.dumps(output_dict, indent=4)
     except Exception as e:
-        raise ParsingException(
+        logging.warning(
             f"Could not handle output. It is not in correct json format. Original error: {repr(e)}"
         )
+        return candidate.text
 
 
 def call_api(
