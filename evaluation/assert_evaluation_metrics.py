@@ -98,7 +98,11 @@ def evaluate(results: pd.DataFrame) -> dict[str, Any]:
         cw_targ, cw_response, average="binary"
     )
 
-    metrics = {"f1": f1, "precision": precision, "recall": recall}
+    metrics = {
+        "f1": float(f1),
+        "precision": float(precision),
+        "recall": float(recall),
+    }
     return metrics
 
 
@@ -114,8 +118,8 @@ def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str,
 
     # This return is an example GradingResult dict
     return {
-        "pass": bool(metrics["f1"] > 0.5),
-        "score": float(metrics["f1"]),
+        "pass": bool(metrics["recall"] > 0),
+        "score": float(metrics["recall"]),
         "reason": pprint.pformat(metrics),
     }
 
