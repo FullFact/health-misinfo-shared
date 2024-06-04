@@ -14,8 +14,9 @@
       <div id="player"></div>
       <script async type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
       <script>
-      var player;
-      var currentTimeIntervalId;
+      let player;
+      let currentTimeIntervalId;
+      const $body = $('body');
 
       window.onYouTubeIframeAPIReady = function() {
         player = new YT.Player('player', {
@@ -36,19 +37,17 @@
         return false;
       }
 
-      var $body = $('body');
-
       $body.on('click', '.transcript-sentence', function () {
         clearAllHighlighting();
-        var $el = $(this);
+        const $el = $(this);
         jumpTo($el.data('start'));
       });
 
       $body.on('click', '.claim', function (ev) {
         ev.preventDefault();
         clearAllHighlighting();
-        var $el = $(this);
-        var level = $el.data('level');
+        const $el = $(this);
+        const level = $el.data('level');
         $el.addClass('highlight-claim ' + level);
         highlightClaimInTranscript($el.data('start'), $el.data('end'), level);
         jumpTo($el.data('start'), $el.data('end'));
@@ -68,9 +67,9 @@
       }
 
       function highlightClaimInTranscript(startTime, endTime, level) {
-        var scrolled = false;
+        let scrolled = false;
         $(".transcript-sentence").each(function () {
-          var $el = $(this);
+          const $el = $(this);
           if (startTime <= $el.data('start') && endTime >= $el.data('end')) {
             $el.addClass('highlight-claim ' + level);
             if (!scrolled) {
@@ -84,16 +83,16 @@
       }
 
       function scrollToSentence($el) {
-        var $container = $('.transcript-container');
+        const $container = $('.transcript-container');
         $container.animate({
           scrollTop: $el.position().top + $container.scrollTop()
         });
       }
 
       function highlightCurrentSentence() {
-        var currentTime = player.getCurrentTime() + 1;
+        const currentTime = player.getCurrentTime() + 1;
         $(".transcript-sentence").each( function () {
-          var $el = $(this);
+          const $el = $(this);
           if (currentTime >= $el.data('start') && currentTime <= $el.data('end')) {
             $el.addClass('active');
             scrollToSentence($el);
