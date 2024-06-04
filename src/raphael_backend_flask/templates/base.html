@@ -4,37 +4,7 @@
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='ff-style.css') }}" />
-    <style type="text/css">
-      a {
-        box-shadow: none;
-      }
-      .transcript-sentence:hover {
-        cursor: pointer;
-        background-color: #E9ECEF;
-      }
-      .transcript-sentence.active {
-        background-color: #E9ECEF;
-      }
-
-      .highlight-claim.info {
-        background-color: #bee5eb;
-      }
-      .highlight-claim.info:hover, .transcript-sentence.active.info {
-        background-color: #abdde5;
-      }
-      .highlight-claim.warning {
-        background-color: #ffeeba;
-      }
-      .highlight-claim.warning:hover, .transcript-sentence.active.warning {
-        background-color: #ffe8a1;
-      }
-      .highlight-claim.danger {
-        background-color: #f5c6cb;
-      }
-      .highlight-claim.danger:hover, .transcript-sentence.active.danger {
-        background-color: #f1b0b7;
-      }
-    </style>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='extra-style.css') }}" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <title>Raphael · Full Fact</title>
