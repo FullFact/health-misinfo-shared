@@ -45,12 +45,8 @@
   <body>
     <nav class="navbar navbar-dark bg-dark">
       <a href="{{ url_for('routes.get_home') }}" class="navbar-brand">Raphael{% if request.path != '/' %}<span class="d-none d-lg-inline"> · Find health misinformation in YouTube videos</span>{% endif %}</a>
-      <div {% if request.path == '/' %}class="invisible"{% endif %}>
-      <form method="POST" action="{{ url_for('routes.post_youtube_url') }}" class="form form-inline">
-        <input class="form-control mr-2 d-inline-block w-auto" type="text" name="q" placeholder="Enter a YouTube URL">
-        <button class="btn btn-outline-primary my-0" type="submit">Analyse</button>
-      </form>
-      </div>
+
+      <span class="navbar-brand m-0">Full Fact AI</span>
     </nav>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
