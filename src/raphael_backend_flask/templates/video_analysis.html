@@ -8,28 +8,101 @@
 </div>
 {% endif %}
 
-<div class="container mt-2 mb-6">
-  <div class="row justify-content-center sticky-top bg-white">
+<div class="container-fluid mt-2 mb-6">
+  <div class="row justify-content-center">
     <div class="col-lg-6 my-4 text-center">
       <div id="player"></div>
       <script async type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
       <script>
-      var player;
-      function onYouTubeIframeAPIReady() {
+      let player;
+      let currentTimeIntervalId;
+      const $body = $('body');
+
+      window.onYouTubeIframeAPIReady = function() {
         player = new YT.Player('player', {
           width: '400px',
           height: '200px',
           videoId: '{{ youtube_id }}',
           playerVars: {
             'playsinline': 1
+          },
+          events: {
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      };
+
+      function jumpTo(start, end) {
+        player.loadVideoById({'videoId': '{{ youtube_id }}', 'startSeconds': start, 'endSeconds': end});
+        return false;
+      }
+
+      $body.on('click', '.transcript-sentence', function () {
+        clearAllHighlighting();
+        const $el = $(this);
+        jumpTo($el.data('start'));
+      });
+
+      $body.on('click', '.claim', function (ev) {
+        ev.preventDefault();
+        clearAllHighlighting();
+        const $el = $(this);
+        const level = $el.data('level');
+        $el.addClass('highlight-claim ' + level);
+        highlightClaimInTranscript($el.data('start'), $el.data('end'), level);
+        jumpTo($el.data('start'), $el.data('end'));
+      });
+
+      function clearAllHighlighting() {
+        $('.claim-container .claim').removeClass('highlight-claim danger warning info');
+        $('.transcript-container .transcript-sentence').removeClass('active highlight-claim danger warning info');
+      }
+
+      function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.PLAYING) {
+          currentTimeIntervalId = setInterval(highlightCurrentSentence, 1000);
+        } else {
+          clearInterval(currentTimeIntervalId);
+        }
+      }
+
+      function highlightClaimInTranscript(startTime, endTime, level) {
+        let scrolled = false;
+        $(".transcript-sentence").each(function () {
+          const $el = $(this);
+          if (startTime <= $el.data('start') && endTime >= $el.data('end')) {
+            $el.addClass('highlight-claim ' + level);
+            if (!scrolled) {
+              scrolled = true;
+              scrollToSentence($el);
+            }
+          } else {
+            $el.removeClass('highlight-claim danger warning info');
           }
         });
       }
 
-      function jumpTo(ev, start, end) {
-        ev.preventDefault();
-        player.loadVideoById({'videoId': '{{ youtube_id }}', 'startSeconds': start, 'endSeconds': end});
-        return false;
+      function scrollToSentence($el) {
+        const $container = $('.transcript-container');
+        $container.animate({
+          scrollTop: $el.position().top + $container.scrollTop()
+        });
+      }
+
+      function highlightCurrentSentence() {
+        // arbitrarily adding 1s to the time here, because otherwise
+        // the sentence highlighting feels like it lags. This keeps
+        // it slightly ahead.
+        const currentTime = player.getCurrentTime() + 1;
+        $(".transcript-sentence").each( function () {
+          const $el = $(this);
+          if (currentTime >= $el.data('start') && currentTime <= $el.data('end')) {
+            $el.addClass('active');
+            scrollToSentence($el);
+          } else {
+            $el.removeClass('active');
+          }
+        })
       }
       </script>
     </div>
@@ -46,16 +119,41 @@
         {{ claims | count }} claims found
       </h3>
       {% endif %}
+    </div>
+  </div>
 
+  <div class="row justify-content-center">
+    <div class="col-md-6 order-last overflow-auto transcript-container" style="height: 60vh; padding: 0 1.25rem; line-height: 2;">
+      {% for sentence in transcript %}
+        <span class="transcript-sentence" data-start="{{ sentence['start'] }}" {% if not loop.last %}data-end="{{ transcript[loop.index]['start'] }}"{% endif %}>{{ sentence['sentence_text'] }}</span> /
+      {% endfor %}
+    </div>
+    <div class="col-md-6 overflow-auto claim-container" style="height: 60vh;">
       <div class="list-group list-group-flush">
       {% for claim in claims %}
-        <a class="list-group-item list-group-item-action mx-n2
-        {% if claim['labels']['summary'] == 'worth checking' %}list-group-item-danger{% elif claim['labels']['summary'] == 'may be worth checking' %}list-group-item-warning{% endif %}"
+        {% if claim['labels']['summary'] == 'worth checking' %}
+          {% set checkworthiness = 'danger' %}
+        {% elif claim['labels']['summary'] == 'may be worth checking' %}
+          {% set checkworthiness = 'warning' %}
+        {% else %}
+          {% set checkworthiness = 'info' %}
+        {% endif %}
+        <a class="list-group-item list-group-item-action mx-n2 claim"
+        data-level="{{ checkworthiness }}"
+        data-start="{{ claim['offset_start_s'] }}"
+        data-end="{{ claim['offset_end_s'] }}"
         style="width:calc(100% + 2rem);"
         title="{{ claim['raw_sentence_text'] }}"
         href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s"
-        onclick="jumpTo(event, {{ claim['offset_start_s'] }}{% if claim['offset_end_s'] %}, {{ claim['offset_end_s'] }}{% endif %})">
-          <strong>{{ loop.index }}.</strong> {{ claim['claim'] }}
+        >
+          <strong>{{ loop.index }}.</strong>
+          {% if claim['labels']['summary'] == 'worth checking' %}
+          <span class="badge badge-danger">{{ claim['labels']['summary'] }}</span>
+          {% elif claim['labels']['summary'] == 'may be worth checking' %}
+          <span class="badge badge-warning">{{ claim['labels']['summary'] }}</span>
+          {% endif %}
+
+          {{ claim['claim'] }}
 
           {{ claim['offset_start_s'] | format_offset }}
         </a>

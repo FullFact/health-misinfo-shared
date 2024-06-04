@@ -4,24 +4,19 @@
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='ff-style.css') }}" />
-    <style type="text/css">
-      a {
-        box-shadow: none;
-      }
-    </style>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='extra-style.css') }}" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <title>Raphael · Full Fact</title>
+    <script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
   </head>
   <body>
     <nav class="navbar navbar-dark bg-dark">
       <a href="{{ url_for('routes.get_home') }}" class="navbar-brand">Raphael{% if request.path != '/' %}<span class="d-none d-lg-inline"> · Find health misinformation in YouTube videos</span>{% endif %}</a>
-      <div {% if request.path == '/' %}class="invisible"{% endif %}>
-      <form method="POST" action="{{ url_for('routes.post_youtube_url') }}" class="form form-inline">
-        <input class="form-control mr-2 d-inline-block w-auto" type="text" name="q" placeholder="Enter a YouTube URL">
-        <button class="btn btn-outline-primary my-0" type="submit">Analyse</button>
-      </form>
-      </div>
+
+      <span class="navbar-brand m-0">Full Fact AI</span>
     </nav>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -37,9 +32,5 @@
     {% endwith %}
 
     {% block content %}{% endblock %}
-
-    <script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
   </body>
 </html>
