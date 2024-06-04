@@ -59,7 +59,7 @@
       }
 
       function onPlayerStateChange(event) {
-        if (event.data == YT.PlayerState.PLAYING) {
+        if (event.data === YT.PlayerState.PLAYING) {
           currentTimeIntervalId = setInterval(highlightCurrentSentence, 1000);
         } else {
           clearInterval(currentTimeIntervalId);
