@@ -20,12 +20,7 @@ def make_reason(
         if not does_pass
     ]
 
-    return f"""
-    The following quotes:
-    {pformat(quotes_not_contained)}
-    Are not contained in the chunk:
-    {chunk}
-    """
+    return f"The following quotes are not contained in the chunk:\n{pformat(quotes_not_contained)}"
 
 
 def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str, Any]:
