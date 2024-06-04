@@ -90,6 +90,9 @@
       }
 
       function highlightCurrentSentence() {
+        // arbitrarily adding 1s to the time here, because otherwise
+        // the sentence highlighting feels like it lags. This keeps
+        // it slightly ahead.
         const currentTime = player.getCurrentTime() + 1;
         $(".transcript-sentence").each( function () {
           const $el = $(this);
