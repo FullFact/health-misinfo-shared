@@ -14,6 +14,9 @@ def closest_rouge(pred: str, targs: list[str]) -> float:
     """Take one predicted claim and find the nearest target claim from a list.
     Returns the index of the best match if its score is above a threshold.
     If no match is good, return -1"""
+    if len(targs) < 1:
+        return -1
+
     rouge_type = "rouge1"
     scorer = rouge_scorer.RougeScorer([rouge_type], use_stemmer=False)
 
@@ -83,6 +86,9 @@ def evaluate(results: pd.DataFrame) -> dict[str, Any]:
     # Then map reponse_explanation and target_expalnation onto CHECKWORTHY_EXPLANATIONS or UNCHECKWORTHY_EXPLANATIONS
     # and then calculate TP,FP etc.
     # List of claims that should have been labelled as True (=Checkworthy)
+    if results.shape[0] == 0:
+        return {"f1": 1.0, "precision": 1.0, "recall": 1.0}
+
     cw_targ = results["target_explanation"].isin(CHECKWORTHY_SUMMARIES)
     cw_targ = cw_targ.fillna(False)
 
@@ -106,6 +112,14 @@ def evaluate(results: pd.DataFrame) -> dict[str, Any]:
     return metrics
 
 
+def get_eval_metrics(
+    generated_output: list[dict[str, Any]], expected_output: list[dict[str, Any]]
+) -> dict[str, Any]:
+    results_table = make_results_table(generated_output, expected_output)
+    metrics = evaluate(results_table)
+    return metrics
+
+
 def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str, Any]:
     prompt = context["prompt"]
     variables = context["vars"]
@@ -113,8 +127,7 @@ def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str,
     generated_output = json.loads(output)
     expected_output = json.loads(variables["expected_output"])
 
-    results_table = make_results_table(generated_output, expected_output)
-    metrics = evaluate(results_table)
+    metrics = get_eval_metrics(generated_output, expected_output)
 
     # This return is an example GradingResult dict
     return {
