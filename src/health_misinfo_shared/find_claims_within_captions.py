@@ -10,6 +10,7 @@ from vertexai.language_models import TextGenerationModel
 from vertexai.generative_models import GenerativeModel, Part
 
 from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
+from health_misinfo_shared.data_parsing import parse_model_json_output
 
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
@@ -61,20 +62,6 @@ def loop_through_videos(video_caption_directory: str) -> Iterator[str]:
 def load_model() -> GenerativeModel:
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_LLM_LOCATION)
     return GenerativeModel(model_name=CURRENT_MODEL)
-
-
-def parse_model_json_output(model_output: str) -> list[dict[str, str]]:
-    model_output = model_output.strip()
-    if model_output.startswith("[") and model_output.endswith("]"):
-        return json.loads(model_output)
-
-    first_square_bracket_idx = model_output.find("[")
-    last_square_bracket_idx = model_output.rfind("]")
-    if first_square_bracket_idx > 0 and last_square_bracket_idx > 0:
-        return json.loads(
-            model_output[first_square_bracket_idx : last_square_bracket_idx + 1]
-        )
-    raise Exception("Could not parse the string.")
 
 
 def print_info(video_id: str, input_str: str, output_str: str) -> None:
