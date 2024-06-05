@@ -130,11 +130,12 @@ def form_chunks(transcript: list[dict]) -> Iterable[dict]:
                 # fewer than `overlap_size` characters
                 current_chunk = current_chunk[1:]
         current_chunk.append(sentence)
-    yield {
-        "text": " ".join((c["sentence_text"] for c in current_chunk)),
-        "start_offset": current_chunk[0]["start"],
-        "end_offset": None,
-    }
+    if current_chunk:
+        yield {
+            "text": " ".join((c["sentence_text"] for c in current_chunk)),
+            "start_offset": current_chunk[0]["start"],
+            "end_offset": None,
+        }
 
 
 def download_captions(
