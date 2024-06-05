@@ -15,7 +15,7 @@ from health_misinfo_shared.youtube_api import clean_str
 
 urls_re = re.compile('(https://www.youtube.com/api/timedtext[^"]+lang=en)')
 caption_re = re.compile(
-    r'\<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>.*?)</text>'
+    r'<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>[^<]*)<\/text>'
 )
 
 
