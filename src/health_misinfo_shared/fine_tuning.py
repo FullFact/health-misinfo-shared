@@ -278,7 +278,7 @@ def get_video_responses(
         )
 
     for chunk in chunks:
-        prompt = f"{infer_prompt}\n```{chunk}``` "
+        prompt = f"{infer_prompt}\n```{chunk['text']}```"
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
         # doesn't get truncated (and so become unreadable)
