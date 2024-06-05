@@ -4,18 +4,18 @@ This directory contains code for evaluating our prompts using promptfoo.
 
 ## How to run evaluation
 
-1. Check `promptfooconfig.yaml` and check that it's referring to the prompts and tests you want to run.
+1. Check the config `.yaml` file for the test you want to run and check that it's referring to the prompts and tests you want to run.
 Tests are found in `tests.csv` by default, and prompts in the specified test files.
-For comparing context vs no context, I wrote a file (`comparing_prompt_with_and_without_context.py`) which generates the prompt files and the tests for that specific case.
+For comparing context vs no context, I wrote a file (`comparing_prompt_with_and_without_context.py`) which generates the prompt files and the tests for that specific case. 
+It would be advisable to write a similar script for new tests, which would also generate prompt text files, and a `tests.csv` equivalent.
 2. Make sure you're inside the evaluation directory and run the following. This will run the evaluation, and generate your results.
 When it finishes, a nice colourful table will be printed in your terminal.
 
-        npx promptfoo@latest eval
+        npx promptfoo@latest eval -c YOUR_CONFIG_FILE.yaml
 
 3. Run the following to view the results in your browser.
 
         npx promptfoo@latest view
-
 
 ## How to make a new assertion/test
 When we define our test cases, we specify what assertions we want to apply.
@@ -43,4 +43,14 @@ def get_assert(output: str, context) -> Union[bool, float, Dict[str, Any]]:
 
 So for each new way to compare output to evaluation data, you'll want a file like this.
 
-Remember to put it in an `__evaluationN` column in your `tests.csv` file.
+Remember to put it in `__evaluationN` columns in your `tests.csv` file.
+
+## Comparing something new
+To make a new comparison, you'll want to make a few files:
+
+1. `.txt` files for the prompts you want to compare.
+2. a `tests.csv` file containing your test cases
+3. a `.yaml` file defining the promptfoo config.
+
+It's probably a good idea to make a python script (like `comparing_prompt_with_and_without_context.py`) which generates the first two.
+For the `.yaml` file, just make a new one with a clear name, and it'll mostly be a copy and paste of the existing ones but swapping out the tests and prompts files.
