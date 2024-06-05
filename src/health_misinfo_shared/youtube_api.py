@@ -59,7 +59,7 @@ def get_captions(
 
             # extract timestamp and text for each sentence into a dict:
             pat = re.compile(
-                r'\<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>.*?)</text>'
+                r'<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>[^<]*)<\/text>'
             )
             transcript = {
                 "video_id": video_id,
