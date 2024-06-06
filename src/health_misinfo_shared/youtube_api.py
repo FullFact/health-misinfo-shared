@@ -10,7 +10,7 @@ import re
 import json
 import string
 from pathlib import Path
-from typing import Iterator
+from typing import Iterable
 import requests
 from langdetect import detect
 import google_auth_oauthlib.flow
@@ -23,6 +23,7 @@ YT_CREDENTIALS = None
 
 def clean_str(d: dict) -> dict:
     d["sentence_text"] = d["sentence_text"].replace("&amp;#39;", "'")
+    d["start"] = float(d["start"])
     return d
 
 
@@ -58,7 +59,7 @@ def get_captions(
 
             # extract timestamp and text for each sentence into a dict:
             pat = re.compile(
-                r'\<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>.*?)</text>'
+                r'<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>[^<]*)<\/text>'
             )
             transcript = {
                 "video_id": video_id,
@@ -104,7 +105,7 @@ def load_texts(folder) -> list[dict]:
     return flat_list
 
 
-def form_chunks(transcript: list[dict]) -> Iterator[dict]:
+def form_chunks(transcript: list[dict]) -> Iterable[dict]:
     """Split/merged a list of sentences into series of overlapping text chunks.
     Each chunk is a dict containing the text and the start/end timestamps"""
 
@@ -129,11 +130,12 @@ def form_chunks(transcript: list[dict]) -> Iterator[dict]:
                 # fewer than `overlap_size` characters
                 current_chunk = current_chunk[1:]
         current_chunk.append(sentence)
-    yield {
-        "text": " ".join((c["sentence_text"] for c in current_chunk)),
-        "start_offset": current_chunk[0]["start"],
-        "end_offset": None,
-    }
+    if current_chunk:
+        yield {
+            "text": " ".join((c["sentence_text"] for c in current_chunk)),
+            "start_offset": current_chunk[0]["start"],
+            "end_offset": None,
+        }
 
 
 def download_captions(
