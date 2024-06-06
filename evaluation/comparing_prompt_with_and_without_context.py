@@ -35,7 +35,7 @@ def make_prompts_files():
 
 
 def make_tests_file():
-    training_data_file = "data/test_eval_data_very_dodgy.csv"
+    training_data_file = "data/test_eval_data_labelled_by_ed.csv"
     training_data = pd.read_csv(training_data_file)
     training_data.fillna("", inplace=True)
 

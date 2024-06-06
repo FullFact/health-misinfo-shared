@@ -54,3 +54,9 @@ To make a new comparison, you'll want to make a few files:
 
 It's probably a good idea to make a python script (like `comparing_prompt_with_and_without_context.py`) which generates the first two.
 For the `.yaml` file, just make a new one with a clear name, and it'll mostly be a copy and paste of the existing ones but swapping out the tests and prompts files.
+
+## Evaluation data
+We don't have perfect evaluation data at the moment.
+For the current tests where we need labels, we've been using `data/test_eval_data_labelled_by_ed`, which is the training data, with a summary column added by me (**not a fact checker**) *very quickly*.
+
+**This is not good, long term evaluation data**
