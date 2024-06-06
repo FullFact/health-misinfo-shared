@@ -1,6 +1,9 @@
+import os
 import json
+import random
 import pandas as pd
 
+from health_misinfo_shared.youtube_api import get_captions, form_chunks
 from health_misinfo_shared.prompts import HEALTH_INFER_MULTI_LABEL_PROMPT
 from health_misinfo_shared.fine_tuning import construct_in_context_examples
 
@@ -30,14 +33,27 @@ def make_prompts_files():
         out_file.write(prompt_with_context)
 
 
+def load_chunks(video_ids: list[str]) -> list[str]:
+    chunks = []
+    for video_id in video_ids:
+        captions = get_captions(video_id)
+        if "sentences" not in captions:
+            continue
+        current_chunks = [c["text"] for c in form_chunks(captions["sentences"])]
+        chunks += current_chunks
+    return chunks
+
+
 def make_tests_file():
-    training_data_file = "data/test_eval_data_very_dodgy.csv"
-    training_data = pd.read_csv(training_data_file)
-    training_data.fillna("", inplace=True)
+    with open("data/known_misinfo/video_ids.json") as id_file:
+        video_ids = json.load(id_file)
+
+    chunks = load_chunks(video_ids[:10])
+    random.shuffle(chunks)
 
     # generate the test rows
     eval_data = pd.DataFrame()
-    eval_data["chunk"] = training_data["input_text"].unique()
+    eval_data["chunk"] = chunks[:100]
 
     # add the assertions
     eval_data["__expected1"] = ["is-json"] * eval_data.shape[0]
