@@ -2,6 +2,8 @@ import os
 import json
 import time
 from typing import Iterator, Any
+import re
+import ast
 
 from google.auth import default
 
@@ -64,17 +66,22 @@ def load_model() -> GenerativeModel:
 
 
 def parse_model_json_output(model_output: str) -> list[dict[str, str]]:
-    model_output = model_output.strip()
+    original_output = model_output
+    model_output = re.sub(r"```", "", model_output.strip()).rstrip("\n").lstrip("json")
     if model_output.startswith("[") and model_output.endswith("]"):
-        return json.loads(model_output)
+        return json.loads(ast.literal_eval(json.dumps(model_output)))
 
     first_square_bracket_idx = model_output.find("[")
     last_square_bracket_idx = model_output.rfind("]")
     if first_square_bracket_idx > 0 and last_square_bracket_idx > 0:
         return json.loads(
-            model_output[first_square_bracket_idx : last_square_bracket_idx + 1]
+            ast.literal_eval(
+                json.dumps(
+                    model_output[first_square_bracket_idx : last_square_bracket_idx + 1]
+                )
+            )
         )
-    raise Exception("Could not parse the string.")
+    raise Exception("Could not parse the string: ", model_output, original_output)
 
 
 def print_info(video_id: str, input_str: str, output_str: str) -> None:

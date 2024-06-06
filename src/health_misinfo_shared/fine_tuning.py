@@ -18,9 +18,13 @@ from health_misinfo_shared.prompts import (
     HEALTH_TRAINING_EXPLAIN_PROMPT,
     HEALTH_TRAINING_MULTI_LABEL_PROMPT,
     HEALTH_INFER_MULTI_LABEL_PROMPT,
+    CAVEAT_PROMPT,
+    MULTI_LABEL_WITH_CAVEAT_PROMT,
+    STANDALONE_CAVEAT_PROMPT,
 )
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.vertex import tidy_response
+from health_misinfo_shared.find_claims_within_captions import parse_model_json_output
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
@@ -279,7 +283,8 @@ def get_video_responses(
     all_responses = []
 
     for chunk in chunks:
-        prompt = f"{infer_prompt}\n```{chunk}``` "
+        labels_prompt = f"{infer_prompt}\n```{chunk}``` "
+        caveats_prompt = f"{STANDALONE_CAVEAT_PROMPT}\n```{chunk}``` "
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
         # doesn't get truncated (and so become unreadable)
@@ -296,25 +301,38 @@ def get_video_responses(
             generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
             generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
         }
+
         if len(in_context_examples) == 0:
-            response = model.predict(prompt, **parameters)
+            labels_response = model.predict(labels_prompt, **parameters)
+            caveat_response = model.predict(caveats_prompt, **parameters)
+            print("CAVEAT RESPONSE")
+            print(caveat_response)
         else:
-            response = model.generate_content(
-                [prompt],
+            labels_response = model.generate_content(
+                [labels_prompt],
                 generation_config=parameters,
                 safety_settings=safety_settings,
             )
-        for candidate in response.candidates:
+            caveat_response = model.generate_content(
+                [caveats_prompt],
+                generation_config=parameters,
+                safety_settings=safety_settings,
+            )
+            print("CAVEAT RESPONSE")
+            print(caveat_response)
+
+        for candidate in labels_response.candidates:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
             try:
                 if len(str(candidate.text)) > 0:
                     # print(candidate.safety_attributes)
-                    json_text = candidate.text
-                    json_text = tidy_response(json_text)
+                    json_text = parse_model_json_output(candidate.text)
+                    print("JSON output:  ", json_text)
                     formatted_response = {
-                        "response": json.loads(json_text),
+                        "claim": json_text,
                         "chunk": chunk,
                         # "safety": candidate.safety_attributes,
+                        "caveats": caveat_response,
                     }
                     all_responses.append(formatted_response)
             except Exception as e:
@@ -327,13 +345,14 @@ def pretty_format_responses(responses, multilabel: bool = False):
 
     for response in responses:
         print(response["chunk"], "\n")
-        if len(response.get("response", [])) == 0:
+        if len(response.get("claim", [])) == 0:
             print("No claims found!")
         else:
             for claim in response.get("response", []):
                 if multilabel:
                     print(f">>> {claim['claim']}")
                     print(f"    {claim['labels']}")
+                    print(f"    Caveats: {response.get('caveats', [])}")
                 else:
                     print(f">>> {claim['explanation']:20s} {claim['claim']}")
         print("=" * 80)
@@ -347,6 +366,7 @@ def save_all_responses(
     """
     # TODO: check directory exists (& create it) before writing
     claims, chunks = [], []
+    caveats = []
     if multilabel:
         understandable, type_of_claim, med_type = [], [], []
         support, harm, summary = [], [], []
@@ -355,9 +375,10 @@ def save_all_responses(
 
     for response in responses:
         # if len(response.get("claim", [])) > 0:
-        for claim in response.get("response", []):
+        for claim in response.get("claim", []):
             claims.append(claim.get("claim"))
             chunks.append(response.get("chunk"))
+            caveats.append(response.get("caveats"))
             if multilabel:
                 labels = claim.get("labels")
                 understandable.append(labels.get("understandability"))
@@ -379,12 +400,20 @@ def save_all_responses(
                 "support": support,
                 "harm": harm,
                 "summary": summary,
+                "caveats": [str(c) for c in caveats],
             }
         )
-        datapath = f"data/inferred_labels/{folder}/{texts_name}_labels.csv"
+        datapath = (
+            f"data/inferred_labels/multilabel_v1/{folder}/{texts_name}_labels.csv"
+        )
     else:
         data = pd.DataFrame(
-            {"chunk": chunks, "claim": claims, "explanation": explanations}
+            {
+                "chunk": chunks,
+                "claim": claims,
+                "explanation": explanations,
+                "caveats": [str(c) for c in caveats],
+            }
         )
         datapath = f"data/inferred_labels/{texts_name}_labels.csv"
     data.to_csv(datapath, index=False)
@@ -430,13 +459,13 @@ if __name__ == "__main__":
     mode = "in_context"
 
     texts_list = [
-        "acne_nat_rem",
-        "ADHD_nat_rem",
-        "heart_disease_nat_rem",
-        "HPV_nat_rem",
-        "prostate_cancer_nat_rem",
-        "std_nat_rem",
-        "weight_loss_nat_rem",
+        "acne",
+        "ADHD",
+        "heart_disease",
+        "HPV",
+        "prostate_cancer",
+        "std",
+        "weight_loss",
     ]
 
     # Set to False is not the multilabel training set.
@@ -446,12 +475,12 @@ if __name__ == "__main__":
         # Fine-tune a new model:
         # _training_data = make_training_set()
         _training_data = make_training_set_multi_label(
-            ["data/multi_label_training_v1.csv"]
+            ["data/multi_label_training_caveats_v1.csv"]
         )
         _training_data.to_json(
-            "data/multi_label_training_v1.json", orient="records", lines=True
+            "data/multi_label_training_caveats_v1.json", orient="records", lines=True
         )
-        tuning("cj_tuned_multi_label_0", _training_data)
+        tuning("cj_tuned_multi_label_caveat_0", _training_data)
 
     if mode == "in_context":
 
@@ -460,10 +489,7 @@ if __name__ == "__main__":
         )  # or is it 0514 (May 15th update)
         examples, eval_set = construct_in_context_examples(
             [
-                "data/MVP_labelled_claims_1.csv",
-                "data/MVP_labelled_claims_2.csv",
-                "data/MVP_labelled_claims_3.csv",
-                "data/MVP_labelled_claims_4.csv",
+                "data/multi_label_training_v1.csv",
             ]
         )
         # for texts in texts_list[0:4]:
@@ -497,13 +523,13 @@ if __name__ == "__main__":
         # print("\n\n")
         # pretty_format_responses(all_responses)
 
-        for texts in texts_list[0:2]:
+        for texts in texts_list:
             some_captions = youtube_api.load_texts(texts)
 
             all_responses = []
-            for captions in some_captions[0:5]:
+            for captions in some_captions[0:8]:
                 chunks = youtube_api.form_chunks(captions)
                 all_responses += get_video_responses(model, chunks, multilabel)
             print("\n\n")
-            # save_all_responses(all_responses, texts, multilabel)
+            save_all_responses(all_responses, texts, multilabel, "caveats")
             pretty_format_responses(all_responses, multilabel)

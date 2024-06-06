@@ -217,13 +217,13 @@ def query_to_filename(query: str) -> str:
 def multi_issue_search():
     """Collect a fairly random set of videos across a range of health topics"""
     conditions = [
-        "HPV",
-        "ADHD",
-        "prostate cancer",
-        "acne",
-        "weight loss",
-        "heart disease",
-        "STD",
+        # "HPV",
+        # "ADHD",
+        # "prostate cancer",
+        # "acne",
+        # "weight loss",
+        # "heart disease",
+        # "STD",
         "STI",
         "menopause",
         "eating disorders",
