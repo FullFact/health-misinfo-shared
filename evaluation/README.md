@@ -11,7 +11,7 @@ It would be advisable to write a similar script for new tests, which would also 
 2. Make sure you're inside the evaluation directory and run the following. This will run the evaluation, and generate your results.
 When it finishes, a nice colourful table will be printed in your terminal.
 
-        npx promptfoo@latest eval -c YOUR_CONFIG_FILE.yaml
+        PYTHONPATH="../src" npx promptfoo@latest eval -c YOUR_CONFIG_FILE.yaml
 
 3. Run the following to view the results in your browser.
 
