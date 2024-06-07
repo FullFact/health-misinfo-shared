@@ -35,19 +35,32 @@ def make_prompts_files():
 
 
 def make_tests_file():
-    training_data_file = "data/training_set_v2.csv"
+    training_data_file = "data/test_eval_data_labelled_by_ed.csv"
     training_data = pd.read_csv(training_data_file)
+    training_data.fillna("", inplace=True)
 
     # generate the test rows
     eval_data = (
-        training_data.groupby("chunk")
+        training_data.groupby("input_text")
         .apply(
-            lambda sub_df: [
-                json.dumps(
-                    {"claim": row["claim"], "explanation": row["explanation"]}, indent=4
-                )
-                for idx, row in sub_df.iterrows()
-            ]
+            lambda sub_df: json.dumps(
+                [
+                    {
+                        "claim": row["output_text"],
+                        "original_text": row["output_text"],
+                        "labels": {
+                            "understandability": row["understandability"],
+                            "type_of_claim": row["type_of_claim"],
+                            "type_of_medical_claim": row["type_of_medical_claim"],
+                            "support": row["support"],
+                            "harm": row["harm"],
+                            "summary": row["summary"],
+                        },
+                    }
+                    for idx, row in sub_df.iterrows()
+                ],
+                indent=4,
+            )
         )
         .reset_index()
     )
@@ -60,6 +73,9 @@ def make_tests_file():
     ] * eval_data.shape[0]
     eval_data["__expected3"] = [
         "python:file://assert_evaluation_metrics.py"
+    ] * eval_data.shape[0]
+    eval_data["__expected4"] = [
+        "python:file://assert_check_format.py"
     ] * eval_data.shape[0]
 
     eval_data.to_csv("evaluation/tests.csv")

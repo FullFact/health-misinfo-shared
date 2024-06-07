@@ -3,7 +3,7 @@
 # Tests are taken from tests.csv
 # Instructions in the readme.
 # Learn more: https://promptfoo.dev/docs/configuration/guide
-description: 'Raphael Eval'
+description: 'Compare in context to no context'
 
 prompts:
   - file://prompt_no_context.txt
