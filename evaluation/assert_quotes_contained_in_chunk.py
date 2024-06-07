@@ -33,7 +33,7 @@ def get_assert(output: str, context: dict[str, Any]) -> bool | float | dict[str,
         for claim in generated_output
     ]
 
-    score = sum(quote_in_chunk) / len(quote_in_chunk)
+    score = sum(quote_in_chunk) / len(quote_in_chunk) if len(generated_output) else None
     passes = all(quote_in_chunk)
 
     # This return is an example GradingResult dict
@@ -94,6 +94,15 @@ if __name__ == "__main__":
     print()
     output = get_assert(
         test_generated_output,
+        context={
+            "prompt": "PROMPT",
+            "vars": {"chunk": negative_test_chunk},
+        },
+    )
+    pp(output)
+    print()
+    output = get_assert(
+        "[]",
         context={
             "prompt": "PROMPT",
             "vars": {"chunk": negative_test_chunk},
