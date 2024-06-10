@@ -14,13 +14,18 @@ Not overdoing this
 
 DB_PATH = os.getenv("DB_PATH", "database.db")
 
-def execute_statement_unsafe(db: Connection, statement: str) -> None:
+
+def execute_statement_unsafe(
+    db: Connection, statement: str, params: tuple[str, ...] = ()
+) -> None:
     cur = db.cursor()
-    cur.execute(statement)
+    cur.execute(statement, params)
     db.commit()
+
 
 def create_table(db: Connection, statement: str) -> None:
     execute_statement_unsafe(db, statement)
+
 
 def get_db_connection() -> Connection:
     conn = g.get("_database")
@@ -134,7 +139,7 @@ table_users = """
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
+        password_hash TEXT,
         admin BOOL NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -150,18 +155,19 @@ def create_database(path: str) -> None:
     create_table(db, table_inferred_claims)
     create_table(db, table_users)
 
-    default_username = "fullfact"
-    default_password = generate_password_hash("changeme")
-    try:
-        execute_statement_unsafe(db, f"""
-            INSERT INTO users (username, password_hash, admin) VALUES (
-                '{default_username}',
-                '{default_password}',
-                TRUE
-            )  
-        """)
-    except sqlite3.IntegrityError:
-        pass
+    default_username: str = "fullfact"
+    default_password: str = generate_password_hash("changeme")
+    execute_statement_unsafe(
+        db,
+        f"""
+        INSERT INTO users (username, password_hash, admin)
+        VALUES (?, ?, TRUE)
+        ON CONFLICT (username) DO NOTHING
+        """,
+        (
+            default_username,
+            default_password,
+        ),
+    )
 
     db.close()
-

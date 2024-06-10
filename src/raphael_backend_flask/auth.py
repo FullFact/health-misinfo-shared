@@ -7,10 +7,12 @@ from raphael_backend_flask.db import execute_sql
 
 auth = HTTPBasicAuth()
 
+
 class User:
     def __init__(self, username: str, admin: int):
         self.username: str = username
-        self.roles: list[str] = [ "admin" ] if admin else []
+        self.roles: list[str] = ["admin"] if admin else []
+
 
 def get_user_sql(username: str) -> Row | None:
     res = execute_sql(f"SELECT * FROM users WHERE username = ?", (username,))
@@ -18,24 +20,41 @@ def get_user_sql(username: str) -> Row | None:
         return res[0]
     return None
 
+
 def create_user_sql(username: str, password: str, admin: bool) -> None:
     hashed = generate_password_hash(password)
     execute_sql(
         f"INSERT INTO users (username, password_hash, admin) VALUES (?, ?, ?)",
-        (username, hashed, 1 if admin else 0,),
+        (
+            username,
+            hashed,
+            1 if admin else 0,
+        ),
     )
+
 
 def update_user_password_sql(username: str, password: str) -> None:
     hashed = generate_password_hash(password)
-    execute_sql(f"UPDATE users SET password_hash = '{hashed}' WHERE username = ?", (username,))
+    execute_sql(
+        f"UPDATE users SET password_hash = ? WHERE username = ?",
+        (
+            hashed,
+            username,
+        ),
+    )
 
-def delete_user_sql(username: str) -> None:
-    execute_sql(f"UPDATE users SET password_hash = ' ' WHERE username = ?", (username,))
+
+def disable_user_sql(username: str) -> None:
+    execute_sql(
+        f"UPDATE users SET password_hash = NULL WHERE username = ?", (username,)
+    )
+
 
 @auth.verify_password
 def verify_pass(username: str, password: str) -> User | None:
     res = execute_sql(
-        f"SELECT password_hash, admin FROM users WHERE username = ?", (username,)
+        f"SELECT password_hash, admin FROM users WHERE username = ? AND password_hash != NULL",
+        (username,),
     )
     if len(res) < 1:
         return None
@@ -45,6 +64,7 @@ def verify_pass(username: str, password: str) -> User | None:
         return User(username=username, admin=res[0]["admin"])
 
     return None
+
 
 @auth.get_user_roles
 def get_user_roles(user: User) -> list[str]:
