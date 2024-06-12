@@ -1,19 +1,71 @@
-import os
+from sqlite3 import Row
 
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from raphael_backend_flask.db import execute_sql
+
 auth = HTTPBasicAuth()
-users = {
-    user: generate_password_hash(password)
-    for user, password in (
-        item.split(":") for item in os.environ["USERS"].split(",") if item
+
+
+class User:
+    def __init__(self, username: str, admin: int):
+        self.username: str = username
+        self.roles: list[str] = ["admin"] if admin else []
+
+
+def get_user_sql(username: str) -> Row | None:
+    res = execute_sql(f"SELECT * FROM users WHERE username = ?", (username,))
+    if res:
+        return res[0]
+    return None
+
+
+def create_user_sql(username: str, password: str, admin: bool) -> None:
+    hashed = generate_password_hash(password)
+    execute_sql(
+        f"INSERT INTO users (username, password_hash, admin) VALUES (?, ?, ?)",
+        (
+            username,
+            hashed,
+            1 if admin else 0,
+        ),
     )
-}
+
+
+def update_user_password_sql(username: str, password: str) -> None:
+    hashed = generate_password_hash(password)
+    execute_sql(
+        f"UPDATE users SET password_hash = ? WHERE username = ?",
+        (
+            hashed,
+            username,
+        ),
+    )
+
+
+def disable_user_sql(username: str) -> None:
+    execute_sql(
+        f"UPDATE users SET password_hash = NULL WHERE username = ?", (username,)
+    )
 
 
 @auth.verify_password
-def verify_password(username: str, password: str) -> str | None:
-    if username in users and check_password_hash(users[username], password):
-        return username
+def verify_pass(username: str, password: str) -> User | None:
+    res = execute_sql(
+        f"SELECT password_hash, admin FROM users WHERE username = ? AND password_hash != NULL",
+        (username,),
+    )
+    if len(res) < 1:
+        return None
+
+    hashed = res[0]["password_hash"]
+    if check_password_hash(hashed, password):
+        return User(username=username, admin=res[0]["admin"])
+
     return None
+
+
+@auth.get_user_roles
+def get_user_roles(user: User) -> list[str]:
+    return user.roles

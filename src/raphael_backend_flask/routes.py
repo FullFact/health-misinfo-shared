@@ -13,7 +13,7 @@ from flask import (
 )
 from flask.typing import ResponseReturnValue
 
-from raphael_backend_flask.auth import auth
+from raphael_backend_flask.auth import auth, create_user_sql, update_user_password_sql, delete_user_sql
 from raphael_backend_flask.db import execute_sql
 from raphael_backend_flask.process import download_transcript, extract_claims
 from raphael_backend_flask.youtube import extract_youtube_id
@@ -135,3 +135,27 @@ def get_training_claims(youtube_id: str) -> ResponseReturnValue:
 def delete_training_claim(id: int) -> ResponseReturnValue:
     execute_sql("DELETE FROM training_claims WHERE id = ?", (id,))
     return "", 204
+
+
+@routes.post("/api/register")
+@auth.login_required(role="admin")
+def post_register_user() -> ResponseReturnValue:
+    username: str = request.form["username"]
+    password: str = request.form["password"]
+    admin: bool = True if request.form.get("administrator") else False
+    create_user_sql(username, password, admin)
+    return username, 200
+
+@routes.patch("/api/users/<string:username>")
+@auth.login_required(role="admin")
+def patch_user(username: str) -> ResponseReturnValue:
+    """Used to update a user's password."""
+    password = request.form["password"]
+    update_user_password_sql(username, password)
+    return "", 200
+
+@routes.delete("/api/users/<string:username>")
+@auth.login_required(role="admin")
+def delete_user(username: str) -> ResponseReturnValue:
+    delete_user_sql(username)
+    return "", 200
