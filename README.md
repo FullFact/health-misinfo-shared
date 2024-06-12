@@ -76,6 +76,14 @@ The process for making nginx changes is a bit more involved:
    poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml
    ```
 
+## Adding new users
+
+Update [the `USERS` secret in GitHub](https://github.com/FullFact/health-misinfo-shared/settings/secrets/actions), and then run [the build and deploy workflow](https://github.com/FullFact/health-misinfo-shared/actions/workflows/ci.yml) as described above. The secret is in this format:
+
+```
+user1:pass1,user2:pass2,user3:pass3
+```
+
 ## Getting claims for YouTube captions
 
 For building a set of labelled data, we want to get health claims, without all the other stuff we're predicting.
