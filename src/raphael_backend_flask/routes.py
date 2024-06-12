@@ -13,7 +13,7 @@ from flask import (
 )
 from flask.typing import ResponseReturnValue
 
-from raphael_backend_flask.auth import auth, create_user_sql, update_user_password_sql, delete_user_sql
+from raphael_backend_flask.auth import auth, get_user_sql, create_user_sql, update_user_password_sql, disable_user_sql
 from raphael_backend_flask.db import execute_sql
 from raphael_backend_flask.process import download_transcript, extract_claims
 from raphael_backend_flask.youtube import extract_youtube_id
@@ -40,7 +40,9 @@ def get_home() -> ResponseReturnValue:
 
 
 @routes.post("/post")
+@auth.login_required
 def post_youtube_url() -> ResponseReturnValue:
+    user = auth.current_user()
     query = request.form["q"]
     try:
         youtube_id = extract_youtube_id(query)
@@ -49,7 +51,7 @@ def post_youtube_url() -> ResponseReturnValue:
         return redirect(url_for("routes.get_home"))
 
     try:
-        run_id = download_transcript(youtube_id)
+        run_id = download_transcript(user.user_id, youtube_id)
     except Exception as e:
         flash(f"Something went wrong: {e}", "danger")
         return redirect(url_for("routes.get_home"))
@@ -156,6 +158,6 @@ def patch_user(username: str) -> ResponseReturnValue:
 
 @routes.delete("/api/users/<string:username>")
 @auth.login_required(role="admin")
-def delete_user(username: str) -> ResponseReturnValue:
-    delete_user_sql(username)
+def disable_user(username: str) -> ResponseReturnValue:
+    disable_user_sql(username)
     return "", 200
