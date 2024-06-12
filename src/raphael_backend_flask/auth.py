@@ -9,7 +9,8 @@ auth = HTTPBasicAuth()
 
 
 class User:
-    def __init__(self, username: str, admin: int):
+    def __init__(self, user_id: int, username: str, admin: int):
+        self.user_id: int = user_id
         self.username: str = username
         self.roles: list[str] = ["admin"] if admin else []
 
@@ -53,7 +54,7 @@ def disable_user_sql(username: str) -> None:
 @auth.verify_password
 def verify_pass(username: str, password: str) -> User | None:
     res = execute_sql(
-        f"SELECT password_hash, admin FROM users WHERE username = ? AND password_hash != NULL",
+        f"SELECT id, password_hash, admin FROM users WHERE username = ? AND password_hash IS NOT NULL",
         (username,),
     )
     if len(res) < 1:
@@ -61,7 +62,7 @@ def verify_pass(username: str, password: str) -> User | None:
 
     hashed = res[0]["password_hash"]
     if check_password_hash(hashed, password):
-        return User(username=username, admin=res[0]["admin"])
+        return User(user_id=res[0]["id"], username=username, admin=res[0]["admin"])
 
     return None
 
