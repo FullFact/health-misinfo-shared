@@ -50,6 +50,7 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
 
 
 def create_claim_extraction_run(
+    user_id: int,
     youtube_id: str,
     metadata: str,
     transcript: str,
@@ -63,8 +64,9 @@ def create_claim_extraction_run(
         ),
     )
     result = execute_sql(
-        "INSERT INTO claim_extraction_runs (youtube_id, model, status) VALUES (?, ?, ?) RETURNING id",
+        "INSERT INTO claim_extraction_runs (user_id, youtube_id, model, status) VALUES (?, ?, ?, ?) RETURNING id",
         (
+            user_id,
             youtube_id,
             "gemini-pro",
             "processing",
