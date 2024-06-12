@@ -12,7 +12,7 @@ from raphael_backend_flask.db import (
 from raphael_backend_flask.youtube import download_captions, extract_title
 
 
-def download_transcript(youtube_id: str) -> int:
+def download_transcript(user_id: int, youtube_id: str) -> int:
     youtube_url = f"https://youtube.com/watch?v={youtube_id}"
     with requests.get(youtube_url, timeout=60) as resp:
         resp.raise_for_status()
@@ -24,6 +24,7 @@ def download_transcript(youtube_id: str) -> int:
 
     # Add transcript text
     return create_claim_extraction_run(
+        user_id,
         youtube_id,
         json.dumps(metadata),
         json.dumps(transcript),
