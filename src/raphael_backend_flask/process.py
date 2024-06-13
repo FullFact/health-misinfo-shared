@@ -3,7 +3,7 @@ from typing import Any, Iterable
 
 import requests
 
-from health_misinfo_shared.fine_tuning import infer_claims
+from health_misinfo_shared.fine_tuning import infer_claims, get_claim_summary
 from raphael_backend_flask.db import (
     create_claim_extraction_run,
     execute_sql,
@@ -45,7 +45,7 @@ def refine_offsets(claim: dict, transcript: dict) -> dict:
     # refine the end of the chunk
     chunk_text = ""
     for end_idx, sentence in enumerate(transcript[start_idx:end_idx], start_idx + 1):
-        chunk_text += sentence['sentence_text'] + " "
+        chunk_text += sentence["sentence_text"] + " "
         if claim["raw_sentence_text"] in chunk_text:
             break
     else:
@@ -56,7 +56,7 @@ def refine_offsets(claim: dict, transcript: dict) -> dict:
     # refine the start of the chunk
     chunk_text = ""
     for diff, sentence in enumerate(reversed(transcript[start_idx:end_idx])):
-        chunk_text = sentence['sentence_text'] + " " + chunk_text
+        chunk_text = sentence["sentence_text"] + " " + chunk_text
         if claim["raw_sentence_text"] in chunk_text:
             break
     start_idx = end_idx - 1 - diff
@@ -76,7 +76,8 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
         chunk = response.get("chunk")
         for claim in claims:
             labels_dict = claim.get("labels", {})
-            checkworthiness = claim.get("labels", {}).get("summary", "na")
+            checkworthiness = get_claim_summary(claim.get("labels", {}))
+            labels_dict["checkworthiness"] = checkworthiness
             # checkworthiness will be one of "worth checking", "may be worth checking" or "not worth checking"
             parsed_claim = {
                 "run_id": run["id"],

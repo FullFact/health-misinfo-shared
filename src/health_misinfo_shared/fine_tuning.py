@@ -2,7 +2,7 @@
 # Though had a few issues with it..ascii
 
 from __future__ import annotations
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, Dict
 import json
 import pandas as pd
 from google.auth import default
@@ -21,6 +21,7 @@ from health_misinfo_shared.prompts import (
 )
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.vertex import tidy_response
+from health_misinfo_shared.data_parsing import parse_model_json_output
 
 credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
@@ -30,6 +31,58 @@ GCP_TUNED_MODEL_LOCATION = "europe-west4"  # where we do fine tuning/model stora
 CHECKWORTHY_EXPLANATIONS = ["high harm", "citation", "low harm"]
 UNCHECKWORTHY_EXPLANATIONS = ["nothing to check", "hedged claim"]
 VALID_EXPLANATIONS = CHECKWORTHY_EXPLANATIONS + UNCHECKWORTHY_EXPLANATIONS
+
+CATEGORY_WEIGHTS = {
+    "understandability": 15,
+    "type_of_claim": 10,
+    "type_of_medical_claim": 5,
+    "support": 7,
+    "harm": 10,
+}
+LABEL_SCORES = {
+    "understandability": {"understandable": 1, "vague": -3, "not understandable": -10},
+    "type_of_claim": {
+        "opinion": -2,
+        "personal": -3,
+        "citation": 5,
+        "hedged claim": -3,
+        "statement of fact": 3,
+        "advice/recommendation": 3,
+        "promotion": -10,
+        "not a claim": -10,
+    },
+    "type_of_medical_claim": {
+        "symptom": 5,
+        "cause/effect": 5,
+        "correlation": 3,
+        "prevention": 5,
+        "treatment/cure": 5,
+        "outcome": 3,
+        "statistics": 3,
+        "not medical": -10,
+    },
+    "support": {
+        "uncontroversial statement": -5,
+        "disputed claim": 7,
+        "widely discredited": 10,
+        "novel claim": 7,
+        "can't tell": 0,
+    },
+    "harm": {
+        "high harm": 15,
+        "some harm": 10,
+        "low harm": 5,
+        "indirect harm": 5,
+        "harmless": -10,
+        "can't tell": 0,
+    },
+}
+SUMMARY_THRESHOLDS = {
+    # MAKE SURE THESE ARE ALWAYS IN DESCENDING ORDER
+    "worth checking": 200,
+    "may be worth checking": 100,
+    "not worth checking": float("-inf"),
+}
 
 
 def tuning(
@@ -128,6 +181,30 @@ def make_training_set_simple() -> pd.DataFrame:
     return training_data_final_df
 
 
+def calculate_claim_summary_score(labels: Dict[str, str]) -> str:
+    total_score = 0
+    for category in [
+        "understandability",
+        "type_of_claim",
+        "type_of_medical_claim",
+        "support",
+        "harm",
+    ]:
+        label = labels.get(category)
+        score = LABEL_SCORES.get(category).get(label, 0)
+        weight = CATEGORY_WEIGHTS.get(category, 0)
+        total_score += score * weight
+    return total_score
+
+
+def get_claim_summary(labels: Dict[str, str]) -> Dict[str, Dict[str, str]]:
+    total_claim_score = calculate_claim_summary_score(labels)
+    for summary, threshold in SUMMARY_THRESHOLDS.items():
+        if total_claim_score > threshold:
+            claim_summary = summary
+            return claim_summary
+
+
 def make_training_set_explanation() -> pd.DataFrame:
     """(Replacing true/false flag with one of a set of explanations)
     Read a CSV file of labelled data, and create a list-of-JSON
@@ -189,6 +266,8 @@ def make_training_set_multi_label(
     training_data_final = []
     for fn in annotated_files:
         training_data = pd.read_csv(fn)
+        summaries = list(training_data["summary"])
+        training_data = training_data.drop(columns="summary")
         training_data.columns = [
             "output_text",
             "input_text",
@@ -263,7 +342,10 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
 
 
 def get_video_responses(
-    model, chunks: Iterable[dict[str, Any]], multilabel: bool = False, in_context_examples: str = ""
+    model,
+    chunks: Iterable[dict[str, Any]],
+    multilabel: bool = False,
+    in_context_examples: str = "",
 ) -> Iterable[dict[str, Any]]:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
@@ -278,7 +360,12 @@ def get_video_responses(
         )
 
     for chunk in chunks:
-        prompt = f"{infer_prompt}\n```{chunk['text']}```"
+        # chunk_text = chunk["text"] if "text" in chunk.keys() else chunk["input_text"]
+        try:
+            chunk_text = chunk["text"]
+        except TypeError:
+            chunk_text = chunk
+        prompt = f"{infer_prompt}\n```{chunk_text}```"
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
         # doesn't get truncated (and so become unreadable)
@@ -312,7 +399,7 @@ def get_video_responses(
                     json_text = tidy_response(json_text)
                     formatted_response = {
                         "response": json.loads(json_text),
-                        "chunk": chunk,
+                        "chunk": chunk_text,
                         # "safety": candidate.safety_attributes,
                     }
                     yield formatted_response
@@ -332,6 +419,7 @@ def pretty_format_responses(responses, multilabel: bool = False):
                 if multilabel:
                     print(f">>> {claim['claim']}")
                     print(f"    {claim['labels']}")
+                    print(f"    Summary: {get_claim_summary(claim['labels'])}")
                 else:
                     print(f">>> {claim['explanation']:20s} {claim['claim']}")
         print("=" * 80)
@@ -356,6 +444,8 @@ def save_all_responses(
         for claim in response.get("response", []):
             claims.append(claim.get("claim"))
             chunks.append(response.get("chunk"))
+            print("CLAIM", claim.get("claim"))
+            print("CHUNK", response.get("chunk"))
             if multilabel:
                 labels = claim.get("labels")
                 understandable.append(labels.get("understandability"))
@@ -363,7 +453,7 @@ def save_all_responses(
                 med_type.append(labels.get("type_of_medical_claim"))
                 support.append(labels.get("support"))
                 harm.append(labels.get("harm"))
-                summary.append(labels.get("summary"))
+                summary.append(get_claim_summary(labels))
             else:
                 explanations.append(claim.get("explanation"))
     if multilabel:
@@ -389,7 +479,7 @@ def save_all_responses(
 
 
 def construct_in_context_examples(
-    data_filenames: list[str], split_frac=1.0
+    data_filenames: list[str], split_frac=0.9
 ) -> tuple[str, list[dict]]:
     """
     Read annotated data from a list of files. Use some of that to build a single prompt
@@ -414,16 +504,9 @@ def construct_in_context_examples(
             # TODO: improve logic here. E.g. use an internal score, so 'citation' adds 1, 'high harm' adds 2, 'low harm' adds 1 etc.
             # then map back to label
 
-            t["labels"]["summary"] = "not worth checking"  # default
-            if t["labels"]["support"] in ["widely discredited"]:
-                t["labels"]["summary"] = "worth checking"
-            if t["labels"]["harm"] in ["high harm", "some harm"]:
-                t["labels"]["summary"] = "worth checking"
-            if t["labels"]["harm"] in ["low harm", "indirect harm"]:
-                t["labels"]["summary"] = "may be worth checking"
+            t["labels"]["summary"] = get_claim_summary(t["labels"])
 
         examples += f"Output: {target}\n"
-
     return examples, hold_out_set
 
 
@@ -433,12 +516,7 @@ def infer_claims(video_id: str, transcript: list[dict]) -> Iterable[dict[str, An
 
     chunks = youtube_api.form_chunks(transcript)
     model = GenerativeModel("gemini-1.5-pro-preview-0514")
-    annotated_data_files = [
-        "data/MVP_labelled_claims_1.csv",
-        "data/MVP_labelled_claims_2.csv",
-        "data/MVP_labelled_claims_3.csv",
-        "data/MVP_labelled_claims_4.csv",
-    ]
+    annotated_data_files = ["data/full_in_context_labelled_data.csv"]
     in_context_examples, empty_hold_out_set = construct_in_context_examples(
         annotated_data_files, split_frac=1.0
     )
@@ -484,12 +562,7 @@ if __name__ == "__main__":
             "gemini-1.5-pro-preview-0514"
         )  # or is it 0514 (May 15th update)
         examples, eval_set = construct_in_context_examples(
-            [
-                "data/MVP_labelled_claims_1.csv",
-                "data/MVP_labelled_claims_2.csv",
-                "data/MVP_labelled_claims_3.csv",
-                "data/MVP_labelled_claims_4.csv",
-            ]
+            ["data/full_in_context_labelled_data.csv"]
         )
         # for texts in texts_list[0:4]:
         #     some_captions = youtube_api.load_texts(texts)
@@ -497,14 +570,16 @@ if __name__ == "__main__":
         #     all_responses = []
         #     for captions in some_captions[0:5]:
         #         chunks = youtube_api.form_chunks(captions)
-        eval_chunk = ""
+        eval_chunk = []
         for idx, eval_row in eval_set.iterrows():
-            eval_chunk += eval_row["input_text"] + " \n"
+            eval_chunk.append(eval_row["input_text"])
 
         print("\n\nEval chunk:\n", eval_chunk)
-        all_responses = list(get_video_responses(
-            model, [eval_chunk], multilabel, in_context_examples=examples
-        ))
+        all_responses = list(
+            get_video_responses(
+                model, eval_chunk, multilabel, in_context_examples=examples
+            )
+        )
         print("\n\n")
         pretty_format_responses(all_responses, multilabel)
         save_all_responses(all_responses, "hold_out", multilabel, folder="ICL")
