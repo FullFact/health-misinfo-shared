@@ -120,6 +120,7 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
                     Give the label "hedged claim" if the claim stops short of being definitive, by saying using words like "can" or "may", or is about a link as opposed to a definitive cause and effect.
                     Give the label "statement of fact" if the claim is stating something as a fact without opinion, qualification, or reference to research of any kind.
                     Give the label "advice/recommendation" if the claim purports to give medical advice.
+                    Give the label "promotion" if the claim clearly promotes a product or brand of some kind.
                     Give the label "not a claim" if the sentence cannot be interpreted as a claim.
 
                 Label 3: Type of medical claim.
@@ -195,6 +196,7 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
                     Give the label "hedged claim" if the claim stops short of being definitive, by saying using words like "can" or "may", or is about a link as opposed to a definitive cause and effect.
                     Give the label "statement of fact" if the claim is stating something as a fact without opinion, qualification, or reference to research of any kind.
                     Give the label "advice/recommendation" if the claim purports to give medical advice.
+                    Give the label "promotion" if the claim clearly promotes a product or brand of some kind.
                     Give the label "not a claim" if the sentence cannot be interpreted as a claim.
 
                 Label 3: Type of medical claim.
@@ -222,12 +224,6 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
                     Give the label "harmless" if beleiving this claim is unlikely to cause any harm to an individual.
                     Give the label "can't tell" if the potential harm of the claim cannot be determined.
 
-            4 - Give a summary.
-                Based on the labels above, decide if the claim is especially worth checking.
-                    Give the label "not worth checking" if the claim is uncontroversial, harmless, not medical, an opinion, a personal claim about an individual, or not understandable.
-                    Give the label "worth checking" if the claim is harmful, disputed, discredited, a new claim, about a study, stated as a fact and understandable.
-                    Give the label "may be worth checking" if the claim falls somewhere in the middle of the labels above.
-
             5 - Return a list of JSON format output as follows:
                         [
                             {
@@ -240,7 +236,6 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
                                         "type_of_medical_claim": <one of these labels: "symptom", "cause/effect", "correlation", "prevention", "statistics", "treatment/cure", "outcome", "not medical">,
                                         "support": <one of these labels: "uncontroversial statement", "disputed claim", "widely discredited", "novel claim", "can't tell">,
                                         "harm": <one of these labels: "high harm", "low harm", "some harm", "harmless", "indirect harm", "can't tell">,
-                                        "summary": <one of these labels: "not worth checking", "worth checking", "may be worth checking">
                                     }
                             }
                         ]
