@@ -78,10 +78,16 @@ LABEL_SCORES = {
     },
 }
 SUMMARY_THRESHOLDS = {
-    # MAKE SURE THESE ARE ALWAYS IN DESCENDING ORDER
-    "worth checking": 200,
-    "may be worth checking": 100,
-    "not worth checking": float("-inf"),
+    k: v
+    for k, v in sorted(
+        {
+            "worth checking": 200,
+            "may be worth checking": 100,
+            "not worth checking": float("-inf"),
+        }.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )
 }
 
 
@@ -197,12 +203,16 @@ def calculate_claim_summary_score(labels: Dict[str, str]) -> str:
     return total_score
 
 
-def get_claim_summary(labels: Dict[str, str]) -> Dict[str, Dict[str, str]]:
-    total_claim_score = calculate_claim_summary_score(labels)
+def decide_claim_summary_label(score: int) -> str:
     for summary, threshold in SUMMARY_THRESHOLDS.items():
-        if total_claim_score > threshold:
+        if score > threshold:
             claim_summary = summary
             return claim_summary
+
+
+def get_claim_summary(labels: Dict[str, str]) -> Dict[str, Dict[str, str]]:
+    total_claim_score = calculate_claim_summary_score(labels)
+    return decide_claim_summary_label(total_claim_score)
 
 
 def make_training_set_explanation() -> pd.DataFrame:
