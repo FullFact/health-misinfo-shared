@@ -2,7 +2,7 @@
 # Though had a few issues with it..ascii
 
 from __future__ import annotations
-from typing import Any, Iterable, Optional, Dict
+from typing import Any, Iterable
 import json
 import pandas as pd
 from google.auth import default
@@ -95,8 +95,8 @@ def tuning(
     model_display_name: str,
     training_data: pd.DataFrame | str,
     train_steps: int = 10,
-    evaluation_dataset: Optional[str] = None,
-    tensorboard_instance_name: Optional[str] = None,
+    evaluation_dataset: str | None = None,
+    tensorboard_instance_name: str | None = None,
 ) -> TextGenerationModel:
     """Tune a new model, based on a prompt-response data.
 
@@ -187,7 +187,7 @@ def make_training_set_simple() -> pd.DataFrame:
     return training_data_final_df
 
 
-def calculate_claim_summary_score(labels: Dict[str, str]) -> str:
+def calculate_claim_summary_score(labels: dict[str, str]) -> str:
     total_score = 0
     for category, scores in LABEL_SCORES.items():
         label = labels.get(category)
@@ -204,7 +204,7 @@ def decide_claim_summary_label(score: int) -> str:
             return claim_summary
 
 
-def get_claim_summary(labels: Dict[str, str]) -> Dict[str, Dict[str, str]]:
+def get_claim_summary(labels: dict[str, str]) -> dict[str, dict[str, str]]:
     total_claim_score = calculate_claim_summary_score(labels)
     return decide_claim_summary_label(total_claim_score)
 
@@ -364,11 +364,8 @@ def get_video_responses(
         )
 
     for chunk in chunks:
-        # chunk_text = chunk["text"] if "text" in chunk.keys() else chunk["input_text"]
-        try:
+        if isinstance(chunk, dict):
             chunk_text = chunk["text"]
-        except TypeError:
-            chunk_text = chunk
         prompt = f"{infer_prompt}\n```{chunk_text}```"
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
@@ -448,8 +445,6 @@ def save_all_responses(
         for claim in response.get("response", []):
             claims.append(claim.get("claim"))
             chunks.append(response.get("chunk"))
-            print("CLAIM", claim.get("claim"))
-            print("CHUNK", response.get("chunk"))
             if multilabel:
                 labels = claim.get("labels")
                 understandable.append(labels.get("understandability"))
