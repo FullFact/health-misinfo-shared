@@ -1,4 +1,4 @@
-name: Build and deploy
+name: Test, build and deploy
 
 on:
   workflow_dispatch:
@@ -8,9 +8,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: 'pyproject.toml'
+          cache: 'poetry'
+
+      - name: Install python dependencies
+        run: poetry install
+
+      # - name: Check typing with mypy
+      #   run: poetry run mypy --install-types --non-interactive src
+
+      # - name: Check code formatting with black
+      #   run: poetry run black --check .
+
+      # - name: Run isort
+      #   run: poetry run isort --check-only .
+
+      # - name: PEP8
+      #   run: poetry run flake8 .
+
+      - name: Run tests
+        run: poetry run pytest
+
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
