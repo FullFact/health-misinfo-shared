@@ -1,9 +1,7 @@
 import pandas as pd
-import pytest
 from health_misinfo_shared import fine_tuning, evaluation, prompts
 
 
-@pytest.mark.skip("Ed is going to rewrite this")
 def test_eval():
 
     model = fine_tuning.get_model_by_display_name("dc_tuned_explain_0")
