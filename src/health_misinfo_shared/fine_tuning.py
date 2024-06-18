@@ -189,15 +189,9 @@ def make_training_set_simple() -> pd.DataFrame:
 
 def calculate_claim_summary_score(labels: Dict[str, str]) -> str:
     total_score = 0
-    for category in [
-        "understandability",
-        "type_of_claim",
-        "type_of_medical_claim",
-        "support",
-        "harm",
-    ]:
+    for category, scores in LABEL_SCORES.items():
         label = labels.get(category)
-        score = LABEL_SCORES.get(category).get(label, 0)
+        score = scores.get(label, 0)
         weight = CATEGORY_WEIGHTS.get(category, 0)
         total_score += score * weight
     return total_score
