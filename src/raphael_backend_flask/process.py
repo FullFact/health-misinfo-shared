@@ -46,7 +46,7 @@ def refine_offsets(claim: dict, transcript: dict) -> dict:
     # refine the end of the chunk
     chunk_text = ""
     for end_idx, sentence in enumerate(transcript[start_idx:end_idx], start_idx + 1):
-        chunk_text += sentence['sentence_text'] + " "
+        chunk_text += sentence["sentence_text"] + " "
         if claim["raw_sentence_text"] in chunk_text:
             break
     else:
@@ -57,7 +57,7 @@ def refine_offsets(claim: dict, transcript: dict) -> dict:
     # refine the start of the chunk
     chunk_text = ""
     for diff, sentence in enumerate(reversed(transcript[start_idx:end_idx])):
-        chunk_text = sentence['sentence_text'] + " " + chunk_text
+        chunk_text = sentence["sentence_text"] + " " + chunk_text
         if claim["raw_sentence_text"] in chunk_text:
             break
     start_idx = end_idx - 1 - diff
