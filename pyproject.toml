@@ -49,12 +49,6 @@ scikit-learn = "^1.5.0"
 [tool.pytest.ini_options]
 pythonpath = "src"
 testpaths = ["tests"]
-filterwarnings = [
-    # "ignore:Deprecated call to `pkg_resources.declare_namespace\\('.*'\\):DeprecationWarning",
-    # "ignore::DeprecationWarning:google.rpc",
-    # "ignore:Call to deprecated function _.*:schematics.deprecated.SchematicsDeprecationWarning", # Schematics internal warnings
-    # "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
-] # Ignore some noisy and unfixable warnings
 
 [tool.isort]
 profile = "black"
