@@ -1,29 +1,28 @@
-import pandas as pd
-from health_misinfo_shared import fine_tuning, evaluation, prompts
+from pytest import mark, param
+from health_misinfo_shared import fine_tuning
 
 
-def test_eval():
-
+@mark.parametrize(
+    "chunk,expected_harm",
+    [
+        param(
+            "It is well known that cucumbers cure cancer if used correctly.",
+            "high harm",
+        ),
+        param(
+            "It is well known that cucumbers taste bland even if used correctly.",
+            "harmless",
+        ),
+    ],
+)
+def test_model_harm(chunk: str, expected_harm: str):
     model = fine_tuning.get_model_by_display_name("dc_tuned_explain_0")
 
-    target_data = pd.DataFrame.from_records(
-        data=[
-            [
-                "Cucumbers can cure cancer",
-                "It is well known that cucumbers cure cancer if used correctly.",
-                "high harm",
-            ],
-            [
-                "Cucumbers can taste bland",
-                "It is well known that cucumbers taste bland even if used correctly.",
-                "nothing to check",
-            ],
-        ],
-        columns=["claim", "chunk", "explanation"],
-    )
+    chunk_dict = {"text": chunk}
 
-    raw_results = evaluation.explain_build_results_table(model, target_data)
-    metrics_results = evaluation.evaluate(raw_results)
+    model_output = [
+        r["response"][0]
+        for r in fine_tuning.get_video_responses(model, [chunk_dict], multilabel=True)
+    ]
 
-    assert metrics_results["precision"] == 1.0
-    assert metrics_results["recall"] == 1.0
+    assert model_output[0]["labels"]["harm"] == expected_harm
