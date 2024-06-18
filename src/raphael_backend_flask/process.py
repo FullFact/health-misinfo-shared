@@ -64,7 +64,8 @@ def refine_offsets(claim: dict, transcript: dict) -> dict:
 
     # update the claim with the refined offsets
     claim["offset_start_s"] = transcript[start_idx]["start"]
-    claim["offset_end_s"] = transcript[end_idx]["start"]
+    if end_idx < len(transcript):
+        claim["offset_end_s"] = transcript[end_idx]["start"]
     return claim
 
 
