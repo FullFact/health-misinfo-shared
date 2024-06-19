@@ -13,7 +13,12 @@ from flask import (
 )
 from flask.typing import ResponseReturnValue
 
-from raphael_backend_flask.auth import auth, get_user_sql, create_user_sql, update_user_password_sql, disable_user_sql
+from raphael_backend_flask.auth import (
+    auth,
+    create_user_sql,
+    update_user_password_sql,
+    disable_user_sql,
+)
 from raphael_backend_flask.db import execute_sql
 from raphael_backend_flask.llm import extract_claims
 from raphael_backend_flask.process import download_transcript
@@ -84,8 +89,7 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
         "SELECT * FROM inferred_claims WHERE run_id = ?", (run_id,)
     )
     claims = [
-        {**claim, **{"labels": json.loads(claim["labels"])}}
-        for claim in claims_sql
+        {**claim, **{"labels": json.loads(claim["labels"])}} for claim in claims_sql
     ]
 
     if run["status"] == "processing":
@@ -149,6 +153,7 @@ def post_register_user() -> ResponseReturnValue:
     create_user_sql(username, password, admin)
     return username, 200
 
+
 @routes.patch("/api/users/<string:username>")
 @auth.login_required(role="admin")
 def patch_user(username: str) -> ResponseReturnValue:
@@ -156,6 +161,7 @@ def patch_user(username: str) -> ResponseReturnValue:
     password = request.form["password"]
     update_user_password_sql(username, password)
     return "", 200
+
 
 @routes.delete("/api/users/<string:username>")
 @auth.login_required(role="admin")
