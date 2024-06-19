@@ -15,7 +15,8 @@ from flask.typing import ResponseReturnValue
 
 from raphael_backend_flask.auth import auth, get_user_sql, create_user_sql, update_user_password_sql, disable_user_sql
 from raphael_backend_flask.db import execute_sql
-from raphael_backend_flask.process import download_transcript, extract_claims
+from raphael_backend_flask.llm import extract_claims
+from raphael_backend_flask.process import download_transcript
 from raphael_backend_flask.youtube import extract_youtube_id
 
 routes = Blueprint("routes", __name__)
