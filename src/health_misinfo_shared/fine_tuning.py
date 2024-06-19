@@ -22,7 +22,6 @@ from health_misinfo_shared.prompts import (
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.vertex import tidy_response
 
-credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
@@ -62,6 +61,7 @@ def tuning(
         projects/PROJECT_ID/locations/LOCATION_ID/tensorboards/TENSORBOARD_INSTANCE_ID
         Note that this instance must be in the same region as your tuning job.
     """
+    credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
     vertexai.init(
         project=GCP_PROJECT_ID, location=GCP_LLM_LOCATION, credentials=credentials
     )

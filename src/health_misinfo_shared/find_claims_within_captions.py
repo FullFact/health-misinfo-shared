@@ -3,8 +3,6 @@ import json
 import time
 from typing import Iterator, Any
 
-from google.auth import default
-
 import vertexai
 from vertexai.language_models import TextGenerationModel
 from vertexai.generative_models import GenerativeModel, Part
@@ -12,8 +10,6 @@ from vertexai.generative_models import GenerativeModel, Part
 from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
 from health_misinfo_shared.data_parsing import parse_model_json_output
 
-
-credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)

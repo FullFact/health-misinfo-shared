@@ -2,10 +2,6 @@ import os
 import pandas as pd
 from google.cloud import aiplatform
 
-from google.auth import default
-
-
-credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_PROJECT_NUMBER = 1447178727

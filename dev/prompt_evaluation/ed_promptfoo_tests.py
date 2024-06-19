@@ -3,11 +3,8 @@ from typing import Any
 from dataclasses import dataclass
 
 import vertexai
-from google.auth import default
 from vertexai.generative_models import GenerativeModel
 
-
-credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)

@@ -8,13 +8,10 @@ from dataclasses import dataclass
 import vertexai
 import vertexai.preview.generative_models as generative_models
 
-from google.auth import default
 from vertexai.generative_models import GenerativeModel
 
 from health_misinfo_shared.data_parsing import parse_model_json_output
 
-
-credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)
