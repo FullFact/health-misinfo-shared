@@ -286,7 +286,9 @@ def get_video_responses(
         )
 
     for chunk in chunks:
-        if isinstance(chunk, dict):
+        if isinstance(chunk, str):
+            chunk_text = chunk
+        elif isinstance(chunk, dict):
             chunk_text = chunk["text"]
         prompt = f"{infer_prompt}\n```{chunk_text}```"
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
