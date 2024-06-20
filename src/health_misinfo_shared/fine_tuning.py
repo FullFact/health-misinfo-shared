@@ -2,7 +2,7 @@
 # Though had a few issues with it..ascii
 
 from __future__ import annotations
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable
 import json
 import pandas as pd
 from google.auth import default
@@ -21,6 +21,8 @@ from health_misinfo_shared.prompts import (
 )
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.vertex import tidy_response
+from health_misinfo_shared.data_parsing import parse_model_json_output
+from health_misinfo_shared.label_scoring import get_claim_summary
 
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
@@ -35,8 +37,8 @@ def tuning(
     model_display_name: str,
     training_data: pd.DataFrame | str,
     train_steps: int = 10,
-    evaluation_dataset: Optional[str] = None,
-    tensorboard_instance_name: Optional[str] = None,
+    evaluation_dataset: str | None = None,
+    tensorboard_instance_name: str | None = None,
 ) -> TextGenerationModel:
     """Tune a new model, based on a prompt-response data.
 
@@ -189,6 +191,8 @@ def make_training_set_multi_label(
     training_data_final = []
     for fn in annotated_files:
         training_data = pd.read_csv(fn)
+        summaries = list(training_data["summary"])
+        training_data = training_data.drop(columns="summary")
         training_data.columns = [
             "output_text",
             "input_text",
@@ -263,7 +267,10 @@ def get_model_by_display_name(display_name: str) -> TextGenerationModel:
 
 
 def get_video_responses(
-    model, chunks: Iterable[dict[str, Any]], multilabel: bool = False, in_context_examples: str = ""
+    model,
+    chunks: Iterable[dict[str, Any]],
+    multilabel: bool = False,
+    in_context_examples: str = "",
 ) -> Iterable[dict[str, Any]]:
     """Group a list of captions into chunks and pass to fine-tuned model.
     Display responses."""
@@ -278,7 +285,13 @@ def get_video_responses(
         )
 
     for chunk in chunks:
-        prompt = f"{infer_prompt}\n```{chunk['text']}```"
+        if isinstance(chunk, str):
+            # for fine-tuning
+            chunk_text = chunk
+        elif isinstance(chunk, dict):
+            # for app
+            chunk_text = chunk["text"]
+        prompt = f"{infer_prompt}\n```{chunk_text}```"
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
         # Set max_output_tokens to be higher than default to make sure the JSON response
         # doesn't get truncated (and so become unreadable)
@@ -332,6 +345,7 @@ def pretty_format_responses(responses, multilabel: bool = False):
                 if multilabel:
                     print(f">>> {claim['claim']}")
                     print(f"    {claim['labels']}")
+                    print(f"    Summary: {get_claim_summary(claim['labels'])}")
                 else:
                     print(f">>> {claim['explanation']:20s} {claim['claim']}")
         print("=" * 80)
@@ -363,7 +377,7 @@ def save_all_responses(
                 med_type.append(labels.get("type_of_medical_claim"))
                 support.append(labels.get("support"))
                 harm.append(labels.get("harm"))
-                summary.append(labels.get("summary"))
+                summary.append(get_claim_summary(labels))
             else:
                 explanations.append(claim.get("explanation"))
     if multilabel:
@@ -389,7 +403,7 @@ def save_all_responses(
 
 
 def construct_in_context_examples(
-    data_filenames: list[str], split_frac=1.0
+    data_filenames: list[str], split_frac=0.9
 ) -> tuple[str, list[dict]]:
     """
     Read annotated data from a list of files. Use some of that to build a single prompt
@@ -414,16 +428,9 @@ def construct_in_context_examples(
             # TODO: improve logic here. E.g. use an internal score, so 'citation' adds 1, 'high harm' adds 2, 'low harm' adds 1 etc.
             # then map back to label
 
-            t["labels"]["summary"] = "not worth checking"  # default
-            if t["labels"]["support"] in ["widely discredited"]:
-                t["labels"]["summary"] = "worth checking"
-            if t["labels"]["harm"] in ["high harm", "some harm"]:
-                t["labels"]["summary"] = "worth checking"
-            if t["labels"]["harm"] in ["low harm", "indirect harm"]:
-                t["labels"]["summary"] = "may be worth checking"
+            t["labels"]["summary"] = get_claim_summary(t["labels"])
 
         examples += f"Output: {target}\n"
-
     return examples, hold_out_set
 
 
@@ -433,12 +440,7 @@ def infer_claims(video_id: str, transcript: list[dict]) -> Iterable[dict[str, An
 
     chunks = youtube_api.form_chunks(transcript)
     model = GenerativeModel("gemini-1.5-pro-preview-0514")
-    annotated_data_files = [
-        "data/MVP_labelled_claims_1.csv",
-        "data/MVP_labelled_claims_2.csv",
-        "data/MVP_labelled_claims_3.csv",
-        "data/MVP_labelled_claims_4.csv",
-    ]
+    annotated_data_files = ["data/full_in_context_labelled_data.csv"]
     in_context_examples, empty_hold_out_set = construct_in_context_examples(
         annotated_data_files, split_frac=1.0
     )
@@ -484,12 +486,7 @@ if __name__ == "__main__":
             "gemini-1.5-pro-preview-0514"
         )  # or is it 0514 (May 15th update)
         examples, eval_set = construct_in_context_examples(
-            [
-                "data/MVP_labelled_claims_1.csv",
-                "data/MVP_labelled_claims_2.csv",
-                "data/MVP_labelled_claims_3.csv",
-                "data/MVP_labelled_claims_4.csv",
-            ]
+            ["data/full_in_context_labelled_data.csv"]
         )
         # for texts in texts_list[0:4]:
         #     some_captions = youtube_api.load_texts(texts)
@@ -497,14 +494,16 @@ if __name__ == "__main__":
         #     all_responses = []
         #     for captions in some_captions[0:5]:
         #         chunks = youtube_api.form_chunks(captions)
-        eval_chunk = ""
+        eval_chunk = []
         for idx, eval_row in eval_set.iterrows():
-            eval_chunk += eval_row["input_text"] + " \n"
+            eval_chunk.append(eval_row["input_text"])
 
         print("\n\nEval chunk:\n", eval_chunk)
-        all_responses = list(get_video_responses(
-            model, [eval_chunk], multilabel, in_context_examples=examples
-        ))
+        all_responses = list(
+            get_video_responses(
+                model, eval_chunk, multilabel, in_context_examples=examples
+            )
+        )
         print("\n\n")
         pretty_format_responses(all_responses, multilabel)
         save_all_responses(all_responses, "hold_out", multilabel, folder="ICL")
