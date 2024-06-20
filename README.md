@@ -121,6 +121,14 @@ We introduce all prompts with a persona, outlining that the model will be acting
 >
 > You would always rather say that you do not know the answer than say something which might be incorrect.
 
+## Claim scoring
+
+Claims with a multi-label classifications are scored.
+Each possible label gets a score, and each feature gets a weight.
+The label score and weight are multiplied, and the weighted scores summed.
+There is a threshold for the summary labels "not worth checking", "may be worth checking" and "worth checking".
+The scores and weights can be found in [the label scoring file](src/health_misinfo_shared/label_scoring.py).
+
 ## Database schema
 
 ```mermaid
