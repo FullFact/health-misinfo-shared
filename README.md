@@ -4,7 +4,7 @@
 
 ## Getting started
 
-To run the app locally, you’ll need python, poetry and node installed. Then:
+To run the app locally, you’ll need python, poetry and node installed. If you want to reinitialise the database, delete your local database.db. Then:
 
 1. Install backend dependencies:
    ```
@@ -15,9 +15,9 @@ To start the development servers:
 
 1. Start the backend development server with:
    ```
-   PYTHONPATH=src USERS=ff:changeme poetry run python -m raphael_backend_flask.app
+   PYTHONPATH=src poetry run python -m raphael_backend_flask.app
    ```
-2. In a browser, visit http://localhost:3000. Login details are: `ff` / `changeme`.
+2. In a browser, visit http://localhost:3000. Login details for a freshly initalised database are: `fullfact` / `changeme`.
 
 ### Running locally with Docker
 
@@ -75,6 +75,34 @@ The process for making nginx changes is a bit more involved:
    ```
    poetry run ansible-playbook -i ansible/inventories/hosts ansible/playbooks/nginx_docker.yaml
    ```
+
+## User management
+
+Users are stored in the database. To add a user, assuming the application is running on `http://127.0.0.1:3000` and the username:password you're using is `fullfact:changeme`:
+
+### Adding a user (admin only)
+```sh
+curl http://127.0.0.1:3000/api/register -i -X POST \
+  -u fullfact:changeme \
+  -F username=big \
+  -F password=chungus \
+  -F admin=on  # this line is optional, marks a user as admin
+```
+
+### Disabling a user (admin only)
+```sh
+curl http://127.0.0.1:3000/api/users/big -i -X DELETE \
+  -u fullfact:changeme
+```
+
+### Changing a user's password (admin only)
+only for this mvp (as a product users should control their own credentials)
+```sh
+curl http://127.0.0.1:3000/api/users/big -i -X PATCH \
+  -u fullfact:changeme \
+  -F password=newpassword
+```
+
 
 ## Getting claims for YouTube captions
 

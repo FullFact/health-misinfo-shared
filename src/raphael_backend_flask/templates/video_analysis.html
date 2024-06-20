@@ -147,10 +147,8 @@
         href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s"
         >
           <strong>{{ loop.index }}.</strong>
-          {% if claim['labels']['summary'] == 'worth checking' %}
-          <span class="badge badge-danger">{{ claim['labels']['summary'] }}</span>
-          {% elif claim['labels']['summary'] == 'may be worth checking' %}
-          <span class="badge badge-warning">{{ claim['labels']['summary'] }}</span>
+          {% if checkworthiness == 'danger' or checkworthiness == 'warning' %}
+          <span class="badge badge-{{ checkworthiness }}">&nbsp;</span>
           {% endif %}
 
           {{ claim['claim'] }}

@@ -4,6 +4,7 @@ from sqlite3 import Connection, Row
 from typing import Any
 
 from flask import g
+from werkzeug.security import generate_password_hash
 
 Table = tuple[str, dict, list[str]]
 """
@@ -14,10 +15,16 @@ Not overdoing this
 DB_PATH = os.getenv("DB_PATH", "database.db")
 
 
-def create_table(db: Connection, statement: str) -> None:
+def execute_statement_unsafe(
+    db: Connection, statement: str, params: tuple[str, ...] = ()
+) -> None:
     cur = db.cursor()
-    cur.execute(statement)
+    cur.execute(statement, params)
     db.commit()
+
+
+def create_table(db: Connection, statement: str) -> None:
+    execute_statement_unsafe(db, statement)
 
 
 def get_db_connection() -> Connection:
@@ -43,6 +50,7 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
 
 
 def create_claim_extraction_run(
+    user_id: int,
     youtube_id: str,
     metadata: str,
     transcript: str,
@@ -56,8 +64,9 @@ def create_claim_extraction_run(
         ),
     )
     result = execute_sql(
-        "INSERT INTO claim_extraction_runs (youtube_id, model, status) VALUES (?, ?, ?) RETURNING id",
+        "INSERT INTO claim_extraction_runs (user_id, youtube_id, model, status) VALUES (?, ?, ?, ?) RETURNING id",
         (
+            user_id,
             youtube_id,
             "gemini-pro",
             "processing",
@@ -83,7 +92,7 @@ def update_claim_extraction_run(
 
 # Note that metadata and transcript contain JSON data
 table_youtube_videos = """
-    CREATE TABLE youtube_videos (
+    CREATE TABLE IF NOT EXISTS youtube_videos (
         id TEXT PRIMARY KEY,
         metadata TEXT,
         transcript TEXT
@@ -91,19 +100,21 @@ table_youtube_videos = """
     """
 
 table_claim_extraction_runs = """
-    CREATE TABLE claim_extraction_runs (
+    CREATE TABLE IF NOT EXISTS claim_extraction_runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
         youtube_id TEXT,
         model TEXT,
         status TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id),
         FOREIGN KEY (youtube_id) REFERENCES youtube_videos (id)
     );
     """
 
 # Note that labels contains JSON data
 table_inferred_claims = """
-    CREATE TABLE inferred_claims (
+    CREATE TABLE IF NOT EXISTS inferred_claims (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id INTEGER,
         claim TEXT,
@@ -117,13 +128,24 @@ table_inferred_claims = """
 
 # Note that labels contains JSON data
 table_training_claims = """
-    CREATE TABLE training_claims (
+    CREATE TABLE IF NOT EXISTS training_claims (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         youtube_id TEXT,
         claim TEXT,
         labels TEXT
     );
     """
+
+# Note that BOOL in sqlite is just INTEGER
+table_users = """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT,
+        admin BOOL NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+"""
 
 
 def create_database(path: str) -> None:
@@ -133,9 +155,21 @@ def create_database(path: str) -> None:
     create_table(db, table_claim_extraction_runs)
     create_table(db, table_training_claims)
     create_table(db, table_inferred_claims)
+    create_table(db, table_users)
+
+    default_username: str = "fullfact"
+    default_password: str = generate_password_hash("changeme")
+    execute_statement_unsafe(
+        db,
+        f"""
+        INSERT INTO users (username, password_hash, admin)
+        VALUES (?, ?, TRUE)
+        ON CONFLICT (username) DO NOTHING
+        """,
+        (
+            default_username,
+            default_password,
+        ),
+    )
 
     db.close()
-
-
-if __name__ == "__main__":
-    create_database("database.db")
