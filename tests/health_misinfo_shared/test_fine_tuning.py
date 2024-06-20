@@ -53,7 +53,7 @@ def test_decide_claim_summary_label(score, summary):
 
 
 @mark.parametrize(
-    "labels, score",
+    "labels, target_scores, total_score",
     [
         (
             {
@@ -63,22 +63,22 @@ def test_decide_claim_summary_label(score, summary):
                 "support": "novel claim",
                 "harm": "low harm",
             },
-            1,
-            -3,
-            5,
-            7,
-            5,
-            100,
+            {
+                "understandability": 1,
+                "type_of_claim": -3,
+                "type_of_medical_claim": 5,
+                "support": 7,
+                "harm": 5,
+            },
+            109,
         )
     ],
 )
 def test_claim_summary_score(
     labels,
-    und_score,
-    type_claim_score,
-    med_type_score,
-    support_score,
-    harm_score,
+    target_scores,
     total_score,
 ):
+    for feature, label in labels.items():
+        assert LABEL_SCORES[feature][label] == target_scores[feature]
     assert calculate_claim_summary_score(labels) == total_score
