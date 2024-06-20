@@ -25,7 +25,6 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
 from health_misinfo_shared.label_scoring import get_claim_summary
 
 
-
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
 GCP_TUNED_MODEL_LOCATION = "europe-west4"  # where we do fine tuning/model storage
@@ -287,8 +286,10 @@ def get_video_responses(
 
     for chunk in chunks:
         if isinstance(chunk, str):
+            # for fine-tuning
             chunk_text = chunk
         elif isinstance(chunk, dict):
+            # for app
             chunk_text = chunk["text"]
         prompt = f"{infer_prompt}\n```{chunk_text}```"
         # To improve JSON, could append: "Sure, here is the output in JSON:\n\n{{"
@@ -324,7 +325,7 @@ def get_video_responses(
                     json_text = tidy_response(json_text)
                     formatted_response = {
                         "response": json.loads(json_text),
-                        "chunk": chunk_text,
+                        "chunk": chunk,
                         # "safety": candidate.safety_attributes,
                     }
                     yield formatted_response
