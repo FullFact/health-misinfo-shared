@@ -6,6 +6,7 @@ from raphael_backend_flask.db import (
     execute_sql,
     update_claim_extraction_run,
 )
+from health_misinfo_shared.label_scoring import get_claim_summary
 from raphael_backend_flask.process import refine_offsets
 
 
@@ -18,6 +19,7 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
         chunk = response.get("chunk")
         for claim in claims:
             labels_dict = claim.get("labels", {})
+            labels_dict["summary"] = get_claim_summary(labels_dict)
             # checkworthiness = claim.get("labels", {}).get("summary", "na")
             # checkworthiness will be one of "worth checking", "may be worth checking" or "not worth checking"
             parsed_claim = {
