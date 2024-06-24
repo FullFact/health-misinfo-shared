@@ -324,7 +324,7 @@ def get_video_responses(
                     json_text = candidate.text
                     json_text = tidy_response(json_text)
                     formatted_response = {
-                        "response": json.loads(json_text),
+                        "response": parse_model_json_output(json_text),
                         "chunk": chunk,
                         # "safety": candidate.safety_attributes,
                     }
