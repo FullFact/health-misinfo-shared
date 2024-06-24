@@ -6,7 +6,7 @@ from typing import Any
 
 def parse_json_string(json_string: str) -> dict[str, Any] | None:
     try:
-        return json.loads(json_string)
+        return json.loads(json_string, strict=False)
     except json.JSONDecodeError:
         try:
             return ast.literal_eval(json_string)
