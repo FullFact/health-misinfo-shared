@@ -2,6 +2,7 @@ import re
 import ast
 import json
 from typing import Any
+from health_misinfo_shared.vertex import tidy_response
 
 
 def parse_json_string(json_string: str) -> dict[str, Any] | None:
@@ -16,6 +17,7 @@ def parse_json_string(json_string: str) -> dict[str, Any] | None:
 
 def parse_model_json_output(model_output: str) -> list[dict[str, str]]:
     original_output = model_output
+    model_output = tidy_response(model_output)
     model_output = model_output.strip()
     # model_output = re.sub(r"```", "", model_output.strip()).rstrip("\n").lstrip("json")
     try:
