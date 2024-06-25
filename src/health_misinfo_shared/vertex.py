@@ -9,18 +9,10 @@ from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.prompts import HEALTH_CLAIM_PROMPT, HEALTH_HARM_PROMPT
+from health_misinfo_shared.data_parsing import tidy_response
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
-
-
-def tidy_response(response_text: str) -> str:
-    """Strip unnecessary head/tail of response string"""
-    # TODO: Maybe investigate this library instead: https://github.com/noamgat/lm-format-enforcer
-    response_text = response_text.strip(" `'\".")
-    if response_text.startswith("json"):
-        response_text = response_text[5:]
-    return response_text
 
 
 def generate_reponse(transcript: str) -> list[dict]:

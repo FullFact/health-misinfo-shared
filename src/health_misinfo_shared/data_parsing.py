@@ -2,7 +2,15 @@ import re
 import ast
 import json
 from typing import Any
-from health_misinfo_shared.vertex import tidy_response
+
+
+def tidy_response(response_text: str) -> str:
+    """Strip unnecessary head/tail of response string"""
+    # TODO: Maybe investigate this library instead: https://github.com/noamgat/lm-format-enforcer
+    response_text = response_text.strip(" `'\".")
+    if response_text.startswith("json"):
+        response_text = response_text[5:]
+    return response_text
 
 
 def parse_json_string(json_string: str) -> dict[str, Any] | None:
