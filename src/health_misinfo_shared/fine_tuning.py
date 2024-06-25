@@ -20,7 +20,6 @@ from health_misinfo_shared.prompts import (
     HEALTH_INFER_MULTI_LABEL_PROMPT,
 )
 from health_misinfo_shared import youtube_api
-from health_misinfo_shared.vertex import tidy_response
 from health_misinfo_shared.data_parsing import parse_model_json_output
 from health_misinfo_shared.label_scoring import get_claim_summary
 
@@ -322,9 +321,8 @@ def get_video_responses(
                 if len(str(candidate.text)) > 0:
                     # print(candidate.safety_attributes)
                     json_text = candidate.text
-                    json_text = tidy_response(json_text)
                     formatted_response = {
-                        "response": json.loads(json_text),
+                        "response": parse_model_json_output(json_text),
                         "chunk": chunk,
                         # "safety": candidate.safety_attributes,
                     }
