@@ -119,7 +119,11 @@ def form_chunks(transcript: list[dict]) -> Iterable[dict]:
 
     current_chunk = []
     for sentence in transcript:
-        if current_chunk and chunk_length(current_chunk) + len(sentence["sentence_text"]) > max_chunk_size:
+        if (
+            current_chunk
+            and chunk_length(current_chunk) + len(sentence["sentence_text"])
+            > max_chunk_size
+        ):
             yield {
                 "text": " ".join((c["sentence_text"] for c in current_chunk)),
                 "start_offset": current_chunk[0]["start"],

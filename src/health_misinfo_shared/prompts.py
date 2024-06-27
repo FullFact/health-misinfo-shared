@@ -13,7 +13,7 @@ HEALTH_HARM_PROMPT = """
             You will analyse the text delimited by triple backticks as follows.
 
             Perform the following actions.
-            1 - Find up to 5 claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
+            1 - Find the claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
             2 - Choose claims that may lead to harm to health if they are believed. This includes claims made without any scientific evidence to support them 
             as well as claims that have a direct harm on someone's health or may harm public health.
             3 - Explain why each claim is likely to cause harm.
@@ -42,7 +42,7 @@ HEALTH_TRAINING_PROMPT = """
             You will analyse the text delimited by triple backticks as follows.
 
             Perform the following actions.
-            1 - Find up to 5 claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
+            1 - Find the claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
             2 - Choose claims that may lead to harm to health if they are believed. This includes claims made without any scientific evidence to support them 
             as well as claims that have a direct harm on someone's health or may harm public health.
             3 - If all the claims are accurate or harmless, give the output "seems legit". Otherwise list the harmful claim as output.
@@ -72,7 +72,7 @@ HEALTH_TRAINING_EXPLAIN_PROMPT = """
             You will analyse the text delimited by triple backticks as follows.
 
             Perform the following actions.
-            1 - Find up to 5 claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
+            1 - Find the claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
             2 - Choose claims that may lead to harm to health if they are believed. This includes claims made without any scientific evidence to support them 
             as well as claims that have a direct harm on someone's health or may harm public health.
             3 - Explain why the claim is important using one of these labels: "high harm", "low harm", "citation", "nothing to check", "hedged claim".
@@ -104,7 +104,7 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
             You will analyse the text delimited by triple backticks as follows.
 
             Perform the following actions.
-            1 - Find up to 5 claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
+            1 - Find the claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
             2 - Choose claims that may lead to harm to health if they are believed. This includes claims made without any scientific evidence to support them as well as claims that have a direct harm on someone's health or may harm public health.
             3 - Give the claim 5 different labels according to the following rules:
 
@@ -180,7 +180,7 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
             You will analyse the text delimited by triple backticks as follows.
 
             Perform the following actions.
-            1 - Find up to 5 claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
+            1 - Find the claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
             2 - Choose claims that may lead to harm to health if they are believed. This includes claims made without any scientific evidence to support them as well as claims that have a direct harm on someone's health or may harm public health.
             3 - Give the claim 5 different labels according to the following rules:
 
@@ -239,7 +239,10 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
                                     }
                             }
                         ]
-                Re-write the output and return nothing except correctly formatted JSON.
+            Re-write the output and return nothing except correctly formatted JSON.
+            This should be the JSON described above with exactly three keys: "claim", "original_text" and "labels".
+            The value "labels" should be a dict with exactly the five keys above: "understandability", "type_of_claim", "type_of_medical_claim", "support" and "harm".
+            If it does not match this description for every single claim, try again.
 """
 
 
@@ -257,7 +260,7 @@ HEALTH_CLAIM_PROMPT = """
             
             You will analyse the text delimited by triple backticks as follows.
 
-            Find up to 5 claims that are the most specific and informative. 
+            Find the claims that are the most specific and informative. 
             Ignore sentences that are not directly about some aspect of health. 
             Ignore sentences that make vague statements or are about someone's individual and personal experiences.
 
