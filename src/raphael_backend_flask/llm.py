@@ -24,8 +24,8 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
             # checkworthiness will be one of "worth checking", "may be worth checking" or "not worth checking"
             parsed_claim = {
                 "run_id": run["id"],
-                "claim": claim["claim"],
-                "raw_sentence_text": claim["original_text"],
+                "claim": claim.get("claim", ""),
+                "raw_sentence_text": claim.get("original_text", ""),
                 "labels": json.dumps(labels_dict),
                 "offset_start_s": chunk["start_offset"],
             }
