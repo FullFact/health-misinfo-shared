@@ -322,25 +322,30 @@ def get_video_responses(
                     generation_config=parameters,
                     safety_settings=safety_settings,
                 )
-            candidate_jsons = [
+            candidate_lists = [
                 parse_model_json_output(candidate.text)
                 for candidate in response.candidates
                 if len(str(candidate.text)) > 0
             ]
             candidate_successes = [
-                assert_output_json_format(c) for c in candidate_jsons
+                [assert_output_json_format(c) for c in candidate_list]
+                for candidate_list in candidate_lists
             ]
             attempts += 1
-            if all(candidate_successes):
+            if all([all(cands) for cands in candidate_successes]):
                 success = True
             if success == False and attempts == 3:
                 fail_indexes = [
-                    i for i, val in enumerate(candidate_successes) if val == False
+                    [i for i, val in enumerate(cand_succ) if val == False]
+                    for cand_succ in candidate_successes
                 ]
-                for i in fail_indexes:
-                    candidate_jsons[i] = insert_missing_key_as_null(candidate_jsons[i])
+                for i, fails in enumerate(fail_indexes):
+                    for j in fails:
+                        candidate_lists[i][j] = insert_missing_key_as_null(
+                            candidate_lists[i][j]
+                        )
 
-        for candidate in candidate_jsons:
+        for candidate in candidate_lists:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
             try:
                 # print(candidate.safety_attributes)
