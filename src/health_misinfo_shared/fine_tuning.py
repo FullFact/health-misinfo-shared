@@ -22,6 +22,10 @@ from health_misinfo_shared.prompts import (
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.data_parsing import parse_model_json_output
 from health_misinfo_shared.label_scoring import get_claim_summary
+from health_misinfo_shared.claim_format_checker import (
+    assert_output_json_format,
+    insert_missing_key_as_null,
+)
 
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
@@ -307,26 +311,45 @@ def get_video_responses(
             generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
             generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
         }
-        if len(in_context_examples) == 0:
-            response = model.predict(prompt, **parameters)
-        else:
-            response = model.generate_content(
-                [prompt],
-                generation_config=parameters,
-                safety_settings=safety_settings,
-            )
-        for candidate in response.candidates:
+        attempts = 0
+        success = False
+        while attempts < 3 and success == False:
+            if len(in_context_examples) == 0:
+                response = model.predict(prompt, **parameters)
+            else:
+                response = model.generate_content(
+                    [prompt],
+                    generation_config=parameters,
+                    safety_settings=safety_settings,
+                )
+            candidate_jsons = [
+                parse_model_json_output(candidate.text)
+                for candidate in response.candidates
+                if len(str(candidate.text)) > 0
+            ]
+            candidate_successes = [
+                assert_output_json_format(c) for c in candidate_jsons
+            ]
+            attempts += 1
+            if all(candidate_successes):
+                success = True
+            if success == False and attempts == 3:
+                fail_indexes = [
+                    i for i, val in enumerate(candidate_successes) if val == False
+                ]
+                for i in fail_indexes:
+                    candidate_jsons[i] = insert_missing_key_as_null(candidate_jsons[i])
+
+        for candidate in candidate_jsons:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
             try:
-                if len(str(candidate.text)) > 0:
-                    # print(candidate.safety_attributes)
-                    json_text = candidate.text
-                    formatted_response = {
-                        "response": parse_model_json_output(json_text),
-                        "chunk": chunk,
-                        # "safety": candidate.safety_attributes,
-                    }
-                    yield formatted_response
+                # print(candidate.safety_attributes)
+                formatted_response = {
+                    "response": candidate,
+                    "chunk": chunk,
+                    # "safety": candidate.safety_attributes,
+                }
+                yield formatted_response
             except Exception as e:
                 print("*** problem handling output? *** ", e)
 
