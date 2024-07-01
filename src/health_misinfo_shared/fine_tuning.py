@@ -315,7 +315,9 @@ def get_video_responses(
         success = False
         while attempts < 3 and success == False:
             if len(in_context_examples) == 0:
-                response = model.predict(prompt, **parameters)
+                response = model.predict(
+                    prompt, **parameters, safety_settings=safety_settings
+                )
             else:
                 response = model.generate_content(
                     [prompt],
