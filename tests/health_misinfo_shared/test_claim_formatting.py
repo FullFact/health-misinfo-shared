@@ -140,7 +140,7 @@ def test_assert_output_json_format(output, expected_bool):
                     "harm": "",
                 },
             },
-            id="one label missing",
+            id="all labels missing",
         ),
     ],
 )
