@@ -311,9 +311,8 @@ def get_video_responses(
             generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
             generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
         }
-        attempts = 0
-        success = False
-        while attempts < 3 and success == False:
+        attempts = 3
+        for _ in range(attempts):
             if len(in_context_examples) == 0:
                 response = model.predict(
                     prompt, **parameters, safety_settings=safety_settings
@@ -333,19 +332,21 @@ def get_video_responses(
                 [assert_output_json_format(c) for c in candidate_list]
                 for candidate_list in candidate_lists
             ]
-            attempts += 1
-            if all([all(cands) for cands in candidate_successes]):
-                success = True
-            if success == False and attempts == 3:
-                fail_indexes = [
-                    [i for i, val in enumerate(cand_succ) if val == False]
-                    for cand_succ in candidate_successes
-                ]
-                for i, fails in enumerate(fail_indexes):
-                    for j in fails:
-                        candidate_lists[i][j] = insert_missing_key_as_null(
-                            candidate_lists[i][j]
-                        )
+            all_successes = all([all(cands) for cands in candidate_successes])
+            if all_successes == False:
+                continue
+            if all_successes == True:
+                break
+        else:
+            fail_indexes = [
+                [i for i, val in enumerate(cand_succ) if val == False]
+                for cand_succ in candidate_successes
+            ]
+            for i, fails in enumerate(fail_indexes):
+                for j in fails:
+                    candidate_lists[i][j] = insert_missing_key_as_null(
+                        candidate_lists[i][j]
+                    )
 
         for candidate in candidate_lists:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
