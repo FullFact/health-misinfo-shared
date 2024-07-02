@@ -25,8 +25,6 @@ from health_misinfo_shared.label_scoring import get_claim_summary
 from health_misinfo_shared.claim_format_checker import (
     assert_output_json_format,
     insert_missing_key_as_null,
-    StrictClaimModel,
-    StrictLabelsModel,
 )
 
 
