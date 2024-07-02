@@ -336,6 +336,7 @@ def get_video_responses(
                 all_successes = all([all(cands) for cands in candidate_successes])
             except Exception as e:
                 print("*** problem handling output? *** ", e)
+                all_successes = False
             if all_successes == False:
                 continue
             if all_successes == True:
