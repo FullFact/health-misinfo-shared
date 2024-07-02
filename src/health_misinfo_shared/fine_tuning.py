@@ -22,6 +22,10 @@ from health_misinfo_shared.prompts import (
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.data_parsing import parse_model_json_output
 from health_misinfo_shared.label_scoring import get_claim_summary
+from health_misinfo_shared.claim_format_checker import (
+    assert_output_json_format,
+    insert_missing_key_as_null,
+)
 
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
@@ -307,28 +311,56 @@ def get_video_responses(
             generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
             generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
         }
-        if len(in_context_examples) == 0:
-            response = model.predict(prompt, **parameters)
-        else:
-            response = model.generate_content(
-                [prompt],
-                generation_config=parameters,
-                safety_settings=safety_settings,
-            )
-        for candidate in response.candidates:
-            # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
+        attempts = 3
+        for _ in range(attempts):
+            if len(in_context_examples) == 0:
+                response = model.predict(
+                    prompt, **parameters, safety_settings=safety_settings
+                )
+            else:
+                response = model.generate_content(
+                    [prompt],
+                    generation_config=parameters,
+                    safety_settings=safety_settings,
+                )
             try:
-                if len(str(candidate.text)) > 0:
-                    # print(candidate.safety_attributes)
-                    json_text = candidate.text
-                    formatted_response = {
-                        "response": parse_model_json_output(json_text),
-                        "chunk": chunk,
-                        # "safety": candidate.safety_attributes,
-                    }
-                    yield formatted_response
+                candidate_lists = [
+                    parse_model_json_output(candidate.text)
+                    for candidate in response.candidates
+                    if len(str(candidate.text)) > 0
+                ]
+                candidate_successes = [
+                    [assert_output_json_format(c) for c in candidate_list]
+                    for candidate_list in candidate_lists
+                ]
+                all_successes = all([all(cands) for cands in candidate_successes])
             except Exception as e:
                 print("*** problem handling output? *** ", e)
+                all_successes = False
+            if all_successes == False:
+                continue
+            if all_successes == True:
+                break
+        else:
+            fail_indexes = [
+                [i for i, val in enumerate(cand_succ) if val == False]
+                for cand_succ in candidate_successes
+            ]
+            for i, fails in enumerate(fail_indexes):
+                for j in fails:
+                    candidate_lists[i][j] = insert_missing_key_as_null(
+                        candidate_lists[i][j]
+                    )
+
+        for candidate in candidate_lists:
+            # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
+            # print(candidate.safety_attributes)
+            formatted_response = {
+                "response": candidate,
+                "chunk": chunk,
+                # "safety": candidate.safety_attributes,
+            }
+            yield formatted_response
 
 
 def pretty_format_responses(responses, multilabel: bool = False):
