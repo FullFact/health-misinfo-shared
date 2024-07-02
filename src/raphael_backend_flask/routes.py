@@ -1,5 +1,5 @@
-from datetime import datetime
 import json
+from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -16,8 +16,8 @@ from flask.typing import ResponseReturnValue
 from raphael_backend_flask.auth import (
     auth,
     create_user_sql,
-    update_user_password_sql,
     disable_user_sql,
+    update_user_password_sql,
 )
 from raphael_backend_flask.db import execute_sql
 from raphael_backend_flask.llm import extract_claims

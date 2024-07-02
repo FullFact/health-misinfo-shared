@@ -1,15 +1,17 @@
 """Access Vertex AI platform"""
 
-import json
 import csv
+import json
 import time
-import vertexai
 from typing import Any, Iterable
-from vertexai.preview.generative_models import GenerativeModel
+
+import vertexai
 import vertexai.preview.generative_models as generative_models
+from vertexai.preview.generative_models import GenerativeModel
+
 from health_misinfo_shared import youtube_api
-from health_misinfo_shared.prompts import HEALTH_CLAIM_PROMPT, HEALTH_HARM_PROMPT
 from health_misinfo_shared.data_parsing import tidy_response
+from health_misinfo_shared.prompts import HEALTH_CLAIM_PROMPT
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)

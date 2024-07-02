@@ -2,11 +2,8 @@ import json
 from typing import Any, Iterable
 
 from health_misinfo_shared.fine_tuning import infer_claims
-from raphael_backend_flask.db import (
-    execute_sql,
-    update_claim_extraction_run,
-)
 from health_misinfo_shared.label_scoring import get_claim_summary
+from raphael_backend_flask.db import execute_sql, update_claim_extraction_run
 from raphael_backend_flask.process import refine_offsets
 
 

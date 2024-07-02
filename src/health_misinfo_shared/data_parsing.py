@@ -1,4 +1,3 @@
-import re
 import ast
 import json
 from typing import Any
@@ -19,7 +18,7 @@ def parse_json_string(json_string: str) -> dict[str, Any] | None:
     except json.JSONDecodeError:
         try:
             return ast.literal_eval(json_string)
-        except Exception as e:
+        except Exception:
             return None
 
 
@@ -38,6 +37,6 @@ def parse_model_json_output(model_output: str) -> list[dict[str, str]]:
             return parse_json_string(
                 model_output[first_square_bracket_idx : last_square_bracket_idx + 1]
             )
-    except Exception as e:
+    except Exception:
         pass
     raise Exception("Could not parse the string: ", model_output, original_output)

@@ -161,7 +161,7 @@ def create_database(path: str) -> None:
     default_password: str = generate_password_hash("changeme")
     execute_statement_unsafe(
         db,
-        f"""
+        """
         INSERT INTO users (username, password_hash, admin)
         VALUES (?, ?, TRUE)
         ON CONFLICT (username) DO NOTHING
