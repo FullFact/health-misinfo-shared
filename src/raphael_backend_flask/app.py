@@ -33,6 +33,7 @@ def teardown_db_connection(_: Any) -> None:
 
 if __name__ == "__main__":
     from raphael_backend_flask.db import create_database
+
     create_database("database.db")
 
     app.run(debug=True, host="0.0.0.0", port=3000)
