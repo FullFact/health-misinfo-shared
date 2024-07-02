@@ -25,6 +25,8 @@ from health_misinfo_shared.label_scoring import get_claim_summary
 from health_misinfo_shared.claim_format_checker import (
     assert_output_json_format,
     insert_missing_key_as_null,
+    StrictClaimModel,
+    StrictLabelsModel,
 )
 
 
@@ -323,16 +325,19 @@ def get_video_responses(
                     generation_config=parameters,
                     safety_settings=safety_settings,
                 )
-            candidate_lists = [
-                parse_model_json_output(candidate.text)
-                for candidate in response.candidates
-                if len(str(candidate.text)) > 0
-            ]
-            candidate_successes = [
-                [assert_output_json_format(c) for c in candidate_list]
-                for candidate_list in candidate_lists
-            ]
-            all_successes = all([all(cands) for cands in candidate_successes])
+            try:
+                candidate_lists = [
+                    parse_model_json_output(candidate.text)
+                    for candidate in response.candidates
+                    if len(str(candidate.text)) > 0
+                ]
+                candidate_successes = [
+                    [assert_output_json_format(c) for c in candidate_list]
+                    for candidate_list in candidate_lists
+                ]
+                all_successes = all([all(cands) for cands in candidate_successes])
+            except Exception as e:
+                print("*** problem handling output? *** ", e)
             if all_successes == False:
                 continue
             if all_successes == True:
@@ -350,16 +355,13 @@ def get_video_responses(
 
         for candidate in candidate_lists:
             # candidate will be a list of 0 or more claims 'cos that's what the prompt asks for!
-            try:
-                # print(candidate.safety_attributes)
-                formatted_response = {
-                    "response": candidate,
-                    "chunk": chunk,
-                    # "safety": candidate.safety_attributes,
-                }
-                yield formatted_response
-            except Exception as e:
-                print("*** problem handling output? *** ", e)
+            # print(candidate.safety_attributes)
+            formatted_response = {
+                "response": candidate,
+                "chunk": chunk,
+                # "safety": candidate.safety_attributes,
+            }
+            yield formatted_response
 
 
 def pretty_format_responses(responses, multilabel: bool = False):
