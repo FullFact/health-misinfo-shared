@@ -1,10 +1,7 @@
-import pytest
+from pydantic import ValidationError
 from pytest import mark, param
 
-from health_misinfo_shared.claim_format_checker import (
-    assert_output_json_format,
-    insert_missing_key_as_null,
-)
+from health_misinfo_shared.claim_format_checker import ClaimModel, StrictClaimModel
 
 
 @mark.parametrize(
@@ -70,7 +67,12 @@ from health_misinfo_shared.claim_format_checker import (
     ],
 )
 def test_assert_output_json_format(output, expected_bool):
-    assert assert_output_json_format(output) == expected_bool
+    try:
+        StrictClaimModel(**output)
+        success = True
+    except ValidationError:
+        success = False
+    assert success == expected_bool
 
 
 @mark.parametrize(
@@ -145,4 +147,4 @@ def test_assert_output_json_format(output, expected_bool):
     ],
 )
 def test_insert_missing_value(output, expected_amended):
-    assert insert_missing_key_as_null(output) == expected_amended
+    assert ClaimModel(**output).model_dump() == expected_amended
