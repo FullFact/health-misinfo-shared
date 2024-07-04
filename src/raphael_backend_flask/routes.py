@@ -30,14 +30,17 @@ routes = Blueprint("routes", __name__)
 @routes.get("/")
 @auth.login_required
 def get_home() -> ResponseReturnValue:
+    current_user = auth.current_user()
     runs = execute_sql(
         """
         SELECT *
         FROM claim_extraction_runs, youtube_videos
         WHERE youtube_id = youtube_videos.id
+        AND user_id = ?
         ORDER BY timestamp DESC
         LIMIT 20
-    """
+    """,
+        (current_user.user_id,)
     )
     return render_template(
         "home.html",
