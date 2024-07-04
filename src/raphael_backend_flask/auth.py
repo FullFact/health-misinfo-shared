@@ -16,7 +16,7 @@ class User:
 
 
 def get_user_sql(username: str) -> Row | None:
-    res = execute_sql(f"SELECT * FROM users WHERE username = ?", (username,))
+    res = execute_sql("SELECT * FROM users WHERE username = ?", (username,))
     if res:
         return res[0]
     return None
@@ -25,7 +25,7 @@ def get_user_sql(username: str) -> Row | None:
 def create_user_sql(username: str, password: str, admin: bool) -> None:
     hashed = generate_password_hash(password)
     execute_sql(
-        f"INSERT INTO users (username, password_hash, admin) VALUES (?, ?, ?)",
+        "INSERT INTO users (username, password_hash, admin) VALUES (?, ?, ?)",
         (
             username,
             hashed,
@@ -37,7 +37,7 @@ def create_user_sql(username: str, password: str, admin: bool) -> None:
 def update_user_password_sql(username: str, password: str) -> None:
     hashed = generate_password_hash(password)
     execute_sql(
-        f"UPDATE users SET password_hash = ? WHERE username = ?",
+        "UPDATE users SET password_hash = ? WHERE username = ?",
         (
             hashed,
             username,
@@ -46,15 +46,13 @@ def update_user_password_sql(username: str, password: str) -> None:
 
 
 def disable_user_sql(username: str) -> None:
-    execute_sql(
-        f"UPDATE users SET password_hash = NULL WHERE username = ?", (username,)
-    )
+    execute_sql("UPDATE users SET password_hash = NULL WHERE username = ?", (username,))
 
 
 @auth.verify_password
 def verify_pass(username: str, password: str) -> User | None:
     res = execute_sql(
-        f"SELECT id, password_hash, admin FROM users WHERE username = ? AND password_hash IS NOT NULL",
+        "SELECT id, password_hash, admin FROM users WHERE username = ? AND password_hash IS NOT NULL",
         (username,),
     )
     if len(res) < 1:

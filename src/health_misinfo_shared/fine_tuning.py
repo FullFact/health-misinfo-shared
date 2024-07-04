@@ -2,31 +2,27 @@
 # Though had a few issues with it..ascii
 
 from __future__ import annotations
+
 from typing import Any, Iterable
-import json
+
 import pandas as pd
-from google.auth import default
 import vertexai
-from vertexai.language_models import TextGenerationModel
-from vertexai.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
+from google.auth import default
+from vertexai.generative_models import GenerativeModel
+from vertexai.language_models import TextGenerationModel
 from vertexai.preview.language_models import TuningEvaluationSpec
 
-from health_misinfo_shared.prompts import (
-    HEALTH_CLAIM_PROMPT,
-    HEALTH_TRAINING_PROMPT,
-    HEALTH_TRAINING_EXPLAIN_PROMPT,
-    HEALTH_TRAINING_MULTI_LABEL_PROMPT,
-    HEALTH_INFER_MULTI_LABEL_PROMPT,
-)
 from health_misinfo_shared import youtube_api
+from health_misinfo_shared.claim_format_checker import ClaimModel, StrictClaimModel
 from health_misinfo_shared.data_parsing import parse_model_json_output
 from health_misinfo_shared.label_scoring import get_claim_summary
-from health_misinfo_shared.claim_format_checker import (
-    StrictClaimModel,
-    ClaimModel,
+from health_misinfo_shared.prompts import (
+    HEALTH_INFER_MULTI_LABEL_PROMPT,
+    HEALTH_TRAINING_EXPLAIN_PROMPT,
+    HEALTH_TRAINING_MULTI_LABEL_PROMPT,
+    HEALTH_TRAINING_PROMPT,
 )
-
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
@@ -118,7 +114,7 @@ def make_training_set_simple() -> pd.DataFrame:
     training_data_final = []
     grps = training_data.groupby("input_text")
     for input_text, grp in grps:
-        bad_rows = grp[grp["flag"] == True]
+        bad_rows = grp[grp["flag"] is True]
         if len(bad_rows) > 0:
             this_output = "; ".join((bad_rows["output_text"].values))
         else:
@@ -160,7 +156,6 @@ def make_training_set_explanation() -> pd.DataFrame:
     training_data_final = []
     grps = training_data.groupby("input_text")
     for input_text, grp in grps:
-
         this_input = prepend_prompt(input_text, HEALTH_TRAINING_EXPLAIN_PROMPT)
         for index, row in grp.iterrows():
             assert row["explanation"] in VALID_EXPLANATIONS
@@ -194,7 +189,7 @@ def make_training_set_multi_label(
     training_data_final = []
     for fn in annotated_files:
         training_data = pd.read_csv(fn)
-        summaries = list(training_data["summary"])
+        # summaries = list(training_data["summary"])
         training_data = training_data.drop(columns="summary")
         training_data.columns = [
             "output_text",
@@ -491,7 +486,6 @@ if __name__ == "__main__":
         tuning("cj_tuned_multi_label_0", _training_data)
 
     if mode == "in_context":
-
         model = GenerativeModel(
             "gemini-1.5-pro-preview-0514"
         )  # or is it 0514 (May 15th update)
