@@ -3,7 +3,7 @@ import pandas as pd
 
 from health_misinfo_shared.prompts import HEALTH_INFER_MULTI_LABEL_PROMPT
 from health_misinfo_shared.fine_tuning import construct_in_context_examples
-
+from health_misinfo_shared.label_scoring import get_claim_summary
 
 in_context_examples, eval_examples = construct_in_context_examples(
     [
@@ -35,7 +35,7 @@ def make_prompts_files():
 
 
 def make_tests_file():
-    training_data_file = "data/test_eval_data_labelled_by_ed.csv"
+    training_data_file = "data/full_in_context_labelled_data.csv"
     training_data = pd.read_csv(training_data_file)
     training_data.fillna("", inplace=True)
 
@@ -54,7 +54,7 @@ def make_tests_file():
                             "type_of_medical_claim": row["type_of_medical_claim"],
                             "support": row["support"],
                             "harm": row["harm"],
-                            "summary": row["summary"],
+                            "summary": get_claim_summary(row),
                         },
                     }
                     for idx, row in sub_df.iterrows()
