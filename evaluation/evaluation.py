@@ -153,10 +153,12 @@ def call_api(
     try:
         output: str = run_prompt(model, prompt)
         output_dict = json.loads(output)
-        for i, o in enumerate(output):
+        for i, o in enumerate(output_dict):
             o["labels"]["summary"] = get_claim_summary(o.get("labels", {}))
             output_dict[i] = o
-        response = ProviderResponse(output=output_dict, error=None, tokenUsage=None)
+        response = ProviderResponse(
+            output=json.dumps(output_dict), error=None, tokenUsage=None
+        )
     except Exception as e:
         response = ProviderResponse(output=None, error=repr(e), tokenUsage=None)
 
