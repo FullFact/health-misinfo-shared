@@ -11,6 +11,7 @@ import vertexai.preview.generative_models as generative_models
 from vertexai.generative_models import GenerativeModel
 
 from health_misinfo_shared.data_parsing import parse_model_json_output
+from health_misinfo_shared.label_scoring import get_claim_summary
 
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
@@ -151,7 +152,13 @@ def call_api(
 
     try:
         output: str = run_prompt(model, prompt)
-        response = ProviderResponse(output=output, error=None, tokenUsage=None)
+        output_dict = json.loads(output)
+        for i, o in enumerate(output_dict):
+            o["labels"]["summary"] = get_claim_summary(o.get("labels", {}))
+            output_dict[i] = o
+        response = ProviderResponse(
+            output=json.dumps(output_dict), error=None, tokenUsage=None
+        )
     except Exception as e:
         response = ProviderResponse(output=None, error=repr(e), tokenUsage=None)
 

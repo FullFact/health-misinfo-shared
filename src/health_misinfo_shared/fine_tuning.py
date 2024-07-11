@@ -194,8 +194,6 @@ def make_training_set_multi_label(
     training_data_final = []
     for fn in annotated_files:
         training_data = pd.read_csv(fn)
-        summaries = list(training_data["summary"])
-        training_data = training_data.drop(columns="summary")
         training_data.columns = [
             "output_text",
             "input_text",
