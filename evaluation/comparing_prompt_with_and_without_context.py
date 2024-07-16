@@ -35,7 +35,7 @@ def make_prompts_files():
 
 
 def make_tests_file():
-    training_data_file = "data/full_in_context_labelled_data.csv"
+    training_data_file = "src/health_misinfo_shared/full_in_context_labelled_data.csv"
     training_data = pd.read_csv(training_data_file)
     training_data.fillna("", inplace=True)
 
