@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 from typing import Any, Iterable
-import json
+from pathlib import Path
 import pandas as pd
 from google.auth import default
 import vertexai
@@ -450,7 +450,9 @@ def infer_claims(video_id: str, transcript: list[dict]) -> Iterable[dict[str, An
 
     chunks = youtube_api.form_chunks(transcript)
     model = GenerativeModel("gemini-1.5-pro-preview-0514")
-    annotated_data_files = ["data/full_in_context_labelled_data.csv"]
+    annotated_data_files = [
+        (Path(__file__).parent / "full_in_context_labelled_data.csv")
+    ]
     in_context_examples, empty_hold_out_set = construct_in_context_examples(
         annotated_data_files, split_frac=1.0
     )
@@ -495,9 +497,10 @@ if __name__ == "__main__":
         model = GenerativeModel(
             "gemini-1.5-pro-preview-0514"
         )  # or is it 0514 (May 15th update)
-        examples, eval_set = construct_in_context_examples(
-            ["data/full_in_context_labelled_data.csv"]
-        )
+        annotated_data_files = [
+            (Path(__file__).parent / "full_in_context_labelled_data.csv")
+        ]
+        examples, eval_set = construct_in_context_examples(annotated_data_files)
         # for texts in texts_list[0:4]:
         #     some_captions = youtube_api.load_texts(texts)
 
