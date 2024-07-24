@@ -126,7 +126,9 @@ We introduce all prompts with a persona, outlining that the model will be acting
 Claims with a multi-label classifications are scored.
 Each possible label gets a score, and each feature gets a weight.
 The label score and weight are multiplied, and the weighted scores summed.
-There is a threshold for the summary labels "not worth checking", "may be worth checking" and "worth checking".
+Scores can have a maximum of 310 and a minimum of -435; although this could change if individual scores and weights are amended.
+There is a threshold for the summary labels "not worth checking" (-435 to 100), "may be worth checking" (101 to 200) and "worth checking" (201 to 310).
+These thresholds can also be amended.
 The scores and weights can be found in [the label scoring file](src/health_misinfo_shared/label_scoring.py).
 
 ## Database schema
