@@ -27,3 +27,7 @@ a {
 .highlight-claim.danger:hover, .transcript-sentence.active.danger {
   background-color: #f1b0b7;
 }
+
+.text-sm {
+  font-size: 0.9em;
+}
