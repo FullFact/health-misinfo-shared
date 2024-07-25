@@ -3,9 +3,13 @@
 {% block content %}
 <div class="container mt-6">
   <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <h2 class="text-center">Find health misinformation in YouTube videos</h2>
-
+    <div class="col-lg-10">
+      <h2 class="text-center ">Find health misinformation in YouTube videos</h2>
+      </div>
+        <div class="col-lg-8">
+          <p class="text-center text-sm"> 
+            This tool is currently in development. Please verify all responses you receive. We welcome your feedback and would love to hear if the tool contributes to any published fact checks.
+          </p>  
       <form method="POST" action="{{ url_for('routes.post_youtube_url') }}" class="justify-content-center my-4">
         <div class="form-group">
           <div class="input-group">
