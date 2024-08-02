@@ -9,10 +9,10 @@ GCS_BUCKET = "fullfact-nlp"
 GCS_FOLDER = "raphael/videos"
 
 
-def upload_file_to_gcs(local_filepath: str, bucket: str, folder: str) -> None:
+def upload_file_to_gcs(local_filepath: str, bucket_name: str, folder: str) -> None:
     filename = local_filepath.split("/")[-1]
     storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket)
+    bucket = storage_client.bucket(bucket_name)
     blob_location = os.path.join(folder, filename)
     blob = bucket.blob(blob_location)
 
@@ -27,7 +27,7 @@ def download_videos(
     video_directory_path: str,
     gcs_bucket: str,
     gcs_folder: str,
-):
+) -> None:
     with open(video_list_path) as video_list_file:
         video_list = [line.strip() for line in video_list_file]
 
