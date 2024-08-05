@@ -3,10 +3,7 @@ import json
 from typing import Iterator
 from google.cloud import storage
 
-from multimodal import MultiModalRaphael
-from prompts import MULTIMODAL_RAPHAEL_PROMPT
-
-from health_misinfo_shared.data_parsing import parse_model_json_output
+from multimodal.multimodal_analyser import MultiModalRaphael
 
 
 GCS_BUCKET = "fullfact-nlp"
@@ -25,9 +22,9 @@ def get_mp4s(bucket_name: str, folder_name: str) -> Iterator[str]:
             yield f"gs://{os.path.join(bucket_name, blob_name)}"
 
 
-def analyse_tiktoks(gcs_bucket: str, gcs_folder: str, out_path: str):
+def analyse_tiktoks(gcs_bucket: str, gcs_folder: str, out_path: str) -> None:
     analyser = MultiModalRaphael()
-    analysed = [analyser.analyse_video(mp4) for mp4 in get_mp4s(GCS_BUCKET, GCS_FOLDER)]
+    analysed = [analyser.analyse_video(mp4) for mp4 in get_mp4s(gcs_bucket, gcs_folder)]
     with open(out_path, "w") as out_file:
         json.dump(analysed, out_file, indent=4)
 

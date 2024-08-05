@@ -2,7 +2,7 @@ import vertexai
 import vertexai.preview.generative_models as generative_models
 from vertexai.generative_models import GenerativeModel, Part
 
-from prompts import MULTIMODAL_RAPHAEL_PROMPT
+from multimodal.prompts import MULTIMODAL_RAPHAEL_PROMPT
 
 
 DEFAULT_PROJECT = "exemplary-cycle-195718"
