@@ -165,9 +165,13 @@ cython_debug/
 #.idea/
 
 # # Data science
-# data/*
-# !data/train_data_v2.json
-# !data/training_set_v2.csv
-# !data/training_set.csv
-# !data/captions/README.md
-# .vscode/launch.json
+data/*
+!data/train_data_v2.json
+!data/training_set_v2.csv
+!data/training_set.csv
+!data/captions/README.md
+!data/known_misinfo/video_ids.json
+!data/videos
+data/videos/*.mp4
+!data/videos/tiktoks.txt
+.vscode/launch.json
