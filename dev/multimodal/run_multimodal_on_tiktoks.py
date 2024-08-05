@@ -3,7 +3,7 @@ import json
 from typing import Iterator
 from google.cloud import storage
 
-from gemini import GeminiModel
+from multimodal import MultiModalRaphael
 from prompts import MULTIMODAL_RAPHAEL_PROMPT
 
 from health_misinfo_shared.data_parsing import parse_model_json_output
@@ -25,20 +25,11 @@ def get_mp4s(bucket_name: str, folder_name: str) -> Iterator[str]:
             yield f"gs://{os.path.join(bucket_name, blob_name)}"
 
 
-def run_video_through_analysis(model: GeminiModel, video_uri: str) -> str:
-    model_output = model.run_prompt_on_video(MULTIMODAL_RAPHAEL_PROMPT, video_uri)
-    output_dict = parse_model_json_output(model_output)
-    return output_dict
-
-
 def analyse_tiktoks(gcs_bucket: str, gcs_folder: str, out_path: str):
-    model = GeminiModel()
-    analysed = [
-        run_video_through_analysis(model, mp4)
-        for mp4 in get_mp4s(GCS_BUCKET, GCS_FOLDER)
-    ]
+    analyser = MultiModalRaphael()
+    analysed = [analyser.analyse_video(mp4) for mp4 in get_mp4s(GCS_BUCKET, GCS_FOLDER)]
     with open(out_path, "w") as out_file:
-        json.dump(analysed, out_file)
+        json.dump(analysed, out_file, indent=4)
 
 
 if __name__ == "__main__":
