@@ -13,6 +13,10 @@ MULTIMODAL_RAPHAEL_PROMPT = """
 
             If a claim is made visually, the claim should be a description of the relevant part of the video.
 
+            Once you've found all the claims in the video, please include any claims at the end which are made by the overall video.
+            For these, the claim will be a description of what claim is trying to be made, and 'original_text' will be your explanation of how the video was putting that across.
+            Include these claims in the output json object in exactly the same format.
+
             Perform the following actions.
             1 - Find the claims that are the most specific, informative and verifiable. Ignore sentences that are not directly about health. 
             2 - Choose claims that may lead to harm to health if they are believed. This includes claims made without any scientific evidence to support them as well as claims that have a direct harm on someone's health or may harm public health.
