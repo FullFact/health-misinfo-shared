@@ -2,6 +2,8 @@ import vertexai
 import vertexai.preview.generative_models as generative_models
 from vertexai.generative_models import GenerativeModel, Part
 
+from prompts import MULTIMODAL_RAPHAEL_PROMPT
+
 
 DEFAULT_PROJECT = "exemplary-cycle-195718"
 
@@ -95,15 +97,15 @@ class GeminiModel:
 if __name__ == "__main__":
     model = GeminiModel()
 
-    output = model.run_prompt(
-        "Write a haiku about being unable to remember an aquaintance's name."
-    )
+    # output = model.run_prompt(
+    #     "Write a haiku about being unable to remember an aquaintance's name."
+    # )
 
-    print(output)
+    # print(output)
 
     output = model.run_prompt_on_video(
-        "Write a haiku about this video.",
-        "gs://fullfact-nlp/raphael/videos/7300977537717407022.mp4",
+        MULTIMODAL_RAPHAEL_PROMPT,
+        "gs://fullfact-nlp/raphael/videos/7328225789827190059.mp4",
     )
 
     print(output)
