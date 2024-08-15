@@ -167,7 +167,6 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
                 Re-write the output and return nothing except correctly formatted JSON.
 """
 
-# The inference prompt also asks the model to give a "summary"
 HEALTH_INFER_MULTI_LABEL_PROMPT = """   
             You are a specialist health fact-checker.
             You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
