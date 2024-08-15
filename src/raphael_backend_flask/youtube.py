@@ -25,7 +25,7 @@ def download_captions(html: str) -> list[dict]:
     if not caption_url_match:
         raise Exception("Couldn’t extract captions for that video")
 
-    caption_url = caption_url_match.group().replace("\\u0026", "&")
+    caption_url = caption_url_match.group().encode("UTF-8").decode("unicode_escape")
 
     with requests.get(caption_url, timeout=60) as resp:
         sentence = resp.text
