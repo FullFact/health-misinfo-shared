@@ -433,7 +433,7 @@ def construct_in_context_examples(
 
     for _id, eg in _training_data.head(split_position).iterrows():
         examples += f"Input: {eg['input_text']}\n"
-        target = json.dumps(eg["output_text"])
+        target = eg["output_text"]
         for t in target:
             # summary should be one of "not worth checking", "worth checking", "may be worth checking"
             # TODO: improve logic here. E.g. use an internal score, so 'citation' adds 1, 'high harm' adds 2, 'low harm' adds 1 etc.
@@ -441,7 +441,7 @@ def construct_in_context_examples(
 
             t["labels"]["summary"] = get_claim_summary(t["labels"])
 
-        examples += f"Output: {target}\n"
+        examples += f"Output: {json.dumps(target)}\n"
     return examples, hold_out_set
 
 
