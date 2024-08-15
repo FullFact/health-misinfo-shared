@@ -27,7 +27,7 @@ def download_captions(html: str) -> list[dict]:
 
     caption_url = caption_urls[0].replace("\\u0026", "&")
 
-    with requests.get(caption_url, allow_redirects=False, timeout=60) as resp:
+    with requests.get(caption_url, timeout=60) as resp:
         sentence = resp.text
 
     sentences = [clean_str(m.groupdict()) for m in caption_re.finditer(sentence)]
