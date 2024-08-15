@@ -13,7 +13,7 @@ import requests
 
 from health_misinfo_shared.youtube_api import clean_str
 
-urls_re = re.compile(r'https://www.youtube.com/api/timedtext[^"]+lang=en[^"]*')
+caption_url_re = re.compile(r'https://www.youtube.com/api/timedtext[^"]+lang=en[^"]*')
 caption_re = re.compile(
     r'<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>[^<]*)<\/text>'
 )
@@ -21,13 +21,13 @@ caption_re = re.compile(
 
 def download_captions(html: str) -> list[dict]:
     # only find english language caption URLs
-    urls = urls_re.findall(html)
-    if not urls:
+    caption_urls = caption_url_re.findall(html)
+    if not caption_urls:
         raise Exception("Couldn’t extract captions for that video")
 
-    url = urls[0].replace("\\u0026", "&")
+    caption_url = caption_urls[0].replace("\\u0026", "&")
 
-    with requests.get(url, allow_redirects=False, timeout=60) as resp:
+    with requests.get(caption_url, allow_redirects=False, timeout=60) as resp:
         sentence = resp.text
 
     sentences = [clean_str(m.groupdict()) for m in caption_re.finditer(sentence)]
