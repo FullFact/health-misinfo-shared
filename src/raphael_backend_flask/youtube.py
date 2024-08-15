@@ -13,14 +13,14 @@ import requests
 
 from health_misinfo_shared.youtube_api import clean_str
 
-urls_re = re.compile('(https://www.youtube.com/api/timedtext[^"]+lang=en)')
+urls_re = re.compile(r'https://www.youtube.com/api/timedtext[^"]+lang=en[^"]*')
 caption_re = re.compile(
     r'<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>[^<]*)<\/text>'
 )
 
 
 def download_captions(html: str) -> list[dict]:
-    # only find URLs with lang=en
+    # only find english language caption URLs
     urls = urls_re.findall(html)
     if not len(urls):
         raise Exception("Couldn’t extract captions for that video")
