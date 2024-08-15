@@ -167,7 +167,6 @@ HEALTH_TRAINING_MULTI_LABEL_PROMPT = """
                 Re-write the output and return nothing except correctly formatted JSON.
 """
 
-# The inference prompt also asks the model to give a "summary"
 HEALTH_INFER_MULTI_LABEL_PROMPT = """   
             You are a specialist health fact-checker.
             You must always prioritise accuracy, and never give a response you cannot be certain of, because you know there are consequences to spreading misinformation, even unintentionally.
@@ -224,7 +223,7 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
                     Give the label "harmless" if beleiving this claim is unlikely to cause any harm to an individual.
                     Give the label "can't tell" if the potential harm of the claim cannot be determined.
 
-            5 - Return a list of JSON format output as follows:
+            4 - Return a list of JSON format output as follows:
                         [
                             {
                                 "claim": <claim being made in the sentence. You can reword it slightly to make it make sense without context, but do not change the meaning of the claim in doing so.>,
