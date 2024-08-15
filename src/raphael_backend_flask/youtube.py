@@ -3,7 +3,7 @@
 # https://developers.google.com/explorer-help/code-samples#python
 # Handy getting-started guide https://developers.google.com/youtube/v3/quickstart/python
 # NOTE: the official API does't actually give you captions (unless you own the video), so
-# we parse the raw XML file to get a temporary link to the captions and download those.
+# we parse the raw HTML file to get a temporary link to the captions and download those.
 
 import re
 from html import unescape
