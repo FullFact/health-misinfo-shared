@@ -22,7 +22,7 @@ caption_re = re.compile(
 def download_captions(html: str) -> list[dict]:
     # only find english language caption URLs
     urls = urls_re.findall(html)
-    if not len(urls):
+    if not urls:
         raise Exception("Couldn’t extract captions for that video")
 
     url = urls[0].replace("\\u0026", "&")
