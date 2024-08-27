@@ -61,10 +61,11 @@ def extract_multimodal_claims(run: dict) -> Iterable[dict[str, Any]]:
         start = claim["timestamp"]["start"]
         end = claim["timestamp"].get("end", None)
 
-        # Correct for times often being returned as 100ths of a second...
-        if end - start < 1:
-            start = start * 100
-            end = end * 100
+        # Correct for times often being returned as m.ss rather than just seconds...
+        diff = end - start
+        if diff < 1 and diff > 0:
+            start = start * 60
+            end = end * 60
 
         parsed_claim = {
             "run_id": run["id"],

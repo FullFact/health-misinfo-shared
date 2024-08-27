@@ -4,7 +4,7 @@
 import json
 from typing import Any, Iterable
 from pathlib import Path
-import json
+
 import pandas as pd
 from google.auth import default
 import vertexai
