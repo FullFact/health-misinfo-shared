@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
   workflow_dispatch:
 
 concurrency:
@@ -24,8 +25,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version-file: 'pyproject.toml'
-          cache: 'poetry'
+          python-version-file: "pyproject.toml"
+          cache: "poetry"
 
       - name: Install python dependencies
         run: poetry install
