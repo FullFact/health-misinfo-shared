@@ -11,10 +11,31 @@
 <div class="container-fluid row mt-2 mb-6">
 
   <div class="col-lg-6 text-center">
-    <div id="player"></div>
-      <video controls style="max-height: 80vh; height: 100%; width: auto; max-width: 100%;">
+      <video id="player" controls style="max-height: 80vh; height: 100%; width: auto; max-width: 100%;">
         <source src="https://storage.googleapis.com/{{video_path}}" type="video/mp4" />
       </video>
+      <script>
+        const body = $('body');
+        const player = $('#player')[0];
+
+        function clearAllHighlighting() {
+          $('.claim-container .claim').removeClass('highlight-claim danger warning info');
+        }
+
+        function jumpTo(time) {
+          player.currentTime = time;
+          player.play();
+        }
+
+        body.on('click', '.claim', function (ev) {
+          ev.preventDefault();
+          clearAllHighlighting();
+          const el = $(this);
+          const level = el.data('level');
+          el.addClass('highlight-claim ' + level);
+          jumpTo(el.data('start'));
+        });
+      </script>
   </div>
 
   <div class="justify-content-center col-lg-6">
