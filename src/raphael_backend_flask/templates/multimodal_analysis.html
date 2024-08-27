@@ -8,55 +8,17 @@
 </div>
 {% endif %}
 
-<div class="container-fluid mt-2 mb-6">
-  <div class="row justify-content-center">
-    <div class="col-lg-6 my-4 text-center">
-      <div id="player"></div>
-        <video controls height=500>
-          <source src="https://storage.googleapis.com/{{video_path}}" type="video/mp4" />
-        </video>
-      <script>
-      let player;
-      let currentTimeIntervalId;
-      const $body = $('body');
+<div class="container-fluid row mt-2 mb-6">
 
-      window.onYouTubeIframeAPIReady = function() {
-      $body.on('click', '.claim', function (ev) {
-        ev.preventDefault();
-        clearAllHighlighting();
-        const $el = $(this);
-        const level = $el.data('level');
-        $el.addClass('highlight-claim ' + level);
-        highlightClaimInTranscript($el.data('start'), $el.data('end'), level);
-        jumpTo($el.data('start'), $el.data('end'));
-      });
-
-      function clearAllHighlighting() {
-        $('.claim-container .claim').removeClass('highlight-claim danger warning info');
-        $('.transcript-container .transcript-sentence').removeClass('active highlight-claim danger warning info');
-      }
-
-      function highlightClaimInTranscript(startTime, endTime, level) {
-        let scrolled = false;
-        $(".transcript-sentence").each(function () {
-          const $el = $(this);
-          if (startTime <= $el.data('start') && endTime >= $el.data('end')) {
-            $el.addClass('highlight-claim ' + level);
-            if (!scrolled) {
-              scrolled = true;
-              scrollToSentence($el);
-            }
-          } else {
-            $el.removeClass('highlight-claim danger warning info');
-          }
-        });
-      }
-      </script>
-    </div>
+  <div class="col-lg-6 text-center">
+    <div id="player"></div>
+      <video controls style="max-height: 80vh; height: 100%; width: auto;">
+        <source src="https://storage.googleapis.com/{{video_path}}" type="video/mp4" />
+      </video>
   </div>
 
-  <div class="row justify-content-center">
-    <div class="col">
+  <div class="justify-content-center col-lg-6">
+    <div class="justify-content-center">
       {% if status == 'processing' %}
       <h3 class="mt-2 searching-for-claims">
         Analysing…
@@ -67,40 +29,39 @@
       </h3>
       {% endif %}
     </div>
-  </div>
 
-  <div class="row justify-content-center">
-    <div class="col-md-6 overflow-auto claim-container" style="height: 60vh;">
-      <div class="list-group list-group-flush">
-      {% for claim in claims %}
-        {% if claim['labels']['summary'] == 'worth checking' %}
-          {% set checkworthiness = 'danger' %}
-        {% elif claim['labels']['summary'] == 'may be worth checking' %}
-          {% set checkworthiness = 'warning' %}
-        {% else %}
-          {% set checkworthiness = 'info' %}
-        {% endif %}
-        <a class="list-group-item list-group-item-action mx-n2 claim"
-        data-level="{{ checkworthiness }}"
-        data-start="{{ claim['offset_start_s'] }}"
-        data-end="{{ claim['offset_end_s'] }}"
-        style="width:calc(100% + 2rem);"
-        title="{{ claim['raw_sentence_text'] }}"
-        href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s"
-        >
-          <strong>{{ loop.index }}.</strong>
-          {% if checkworthiness == 'danger' or checkworthiness == 'warning' %}
-          <span class="badge badge-{{ checkworthiness }}">&nbsp;</span>
+    <div class="row justify-content-center">
+      <div class="col-md-12 overflow-auto claim-container" style="height: 80vh;">
+        <div class="list-group list-group-flush">
+        {% for claim in claims %}
+          {% if claim['labels']['summary'] == 'worth checking' %}
+            {% set checkworthiness = 'danger' %}
+          {% elif claim['labels']['summary'] == 'may be worth checking' %}
+            {% set checkworthiness = 'warning' %}
+          {% else %}
+            {% set checkworthiness = 'info' %}
           {% endif %}
-
-          {{ claim['claim'] }}
-
-          {{ claim['offset_start_s'] | format_offset }}
-        </a>
-      {% endfor %}
+          <a class="list-group-item list-group-item-action mx-n2 claim"
+          data-level="{{ checkworthiness }}"
+          data-start="{{ claim['offset_start_s'] }}"
+          data-end="{{ claim['offset_end_s'] }}"
+          style="width:calc(100% + 2rem);"
+          title="{{ claim['raw_sentence_text'] }}"
+          href="{{ metadata['url'] }}"
+          >
+            <strong>{{ loop.index }}.</strong>
+            {% if checkworthiness == 'danger' or checkworthiness == 'warning' %}
+            <span class="badge badge-{{ checkworthiness }}">&nbsp;</span>
+            {% endif %}
+            {{ claim['claim'] }}
+            {{ claim['offset_start_s'] | format_offset }}
+          </a>
+        {% endfor %}
+        </div>
       </div>
     </div>
   </div>
+
 </div>
 
 {% if status == 'processing' %}
