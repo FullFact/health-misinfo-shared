@@ -15,7 +15,6 @@ from flask import Flask, g
 from flask_cors import CORS
 
 from raphael_backend_flask.routes import routes
-from raphael_backend_flask.db import run_migrations
 
 app = Flask(__name__)
 CORS(app)
@@ -23,8 +22,6 @@ app.register_blueprint(routes)
 app.secret_key = os.urandom(12).hex()
 app.jinja_env.filters["format_offset"] = format_offset
 app.jinja_env.filters["time_diff"] = time_diff
-
-run_migrations()
 
 
 @app.teardown_appcontext
@@ -35,4 +32,8 @@ def teardown_db_connection(_: Any) -> None:
 
 
 if __name__ == "__main__":
+    from raphael_backend_flask.db import run_migrations
+
+    run_migrations()
+
     app.run(debug=True, host="0.0.0.0", port=3000)
