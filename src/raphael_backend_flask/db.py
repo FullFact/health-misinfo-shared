@@ -64,7 +64,37 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
     return data
 
 
-def create_claim_extraction_run(
+def create_multimodal_claim_extraction_run(
+    user_id: int,
+    video_path: str,
+    metadata: str,
+) -> int:
+    result = execute_sql(
+        "INSERT INTO multimodal_videos (video_path, metadata) VALUES (?, ?) RETURNING id",
+        (
+            video_path,
+            metadata,
+        ),
+    )
+    video_id = result[0]["id"]
+
+    result = execute_sql(
+        """
+        INSERT INTO claim_extraction_runs (user_id, multimodal_video_id, model, status)
+        VALUES (?, ?, ?, ?)
+        RETURNING id
+        """,
+        (
+            user_id,
+            video_id,
+            "gemini-1.5-flash-001",
+            "processing",
+        ),
+    )
+    return result[0]["id"]
+
+
+def create_youtube_claim_extraction_run(
     user_id: int,
     youtube_id: str,
     metadata: str,

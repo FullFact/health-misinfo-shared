@@ -1,23 +1,23 @@
 # Code originally from https://cloud.google.com/vertex-ai/docs/generative-ai/models/tune-text-models-supervised?hl=en#generative-ai-tune-model-python_vertex_ai_sdk
 # Though had a few issues with it..ascii
 
-from __future__ import annotations
+import json
 from typing import Any, Iterable
 from pathlib import Path
 import pandas as pd
 from google.auth import default
 import vertexai
 from vertexai.language_models import TextGenerationModel
-from vertexai.generative_models import GenerativeModel
+from vertexai.generative_models import GenerativeModel, Part
 import vertexai.preview.generative_models as generative_models
 from vertexai.preview.language_models import TuningEvaluationSpec
 
 from health_misinfo_shared.prompts import (
-    HEALTH_CLAIM_PROMPT,
     HEALTH_TRAINING_PROMPT,
     HEALTH_TRAINING_EXPLAIN_PROMPT,
     HEALTH_TRAINING_MULTI_LABEL_PROMPT,
     HEALTH_INFER_MULTI_LABEL_PROMPT,
+    MULTIMODAL_RAPHAEL_PROMPT,
 )
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.data_parsing import parse_model_json_output
@@ -29,11 +29,18 @@ from health_misinfo_shared.claim_format_checker import (
 
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
-GCP_LLM_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
+GCP_LLM_LOCATION = "us-central1"  # NB: Gemini is not available in europe-west2 (yet?)
 GCP_TUNED_MODEL_LOCATION = "europe-west4"  # where we do fine tuning/model storage
 CHECKWORTHY_EXPLANATIONS = ["high harm", "citation", "low harm"]
 UNCHECKWORTHY_EXPLANATIONS = ["nothing to check", "hedged claim"]
 VALID_EXPLANATIONS = CHECKWORTHY_EXPLANATIONS + UNCHECKWORTHY_EXPLANATIONS
+
+VIDEO_SAFETY_SETTINGS = {
+    generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+}
 
 
 def tuning(
@@ -160,7 +167,6 @@ def make_training_set_explanation() -> pd.DataFrame:
     training_data_final = []
     grps = training_data.groupby("input_text")
     for input_text, grp in grps:
-
         this_input = prepend_prompt(input_text, HEALTH_TRAINING_EXPLAIN_PROMPT)
         for index, row in grp.iterrows():
             assert row["explanation"] in VALID_EXPLANATIONS
@@ -304,24 +310,18 @@ def get_video_responses(
             "temperature": 0,
             "top_p": 1,
         }
-        # Set saftey to filter as little as possible
-        safety_settings = {
-            generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-            generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-            generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-            generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-        }
+
         attempts = 3
         for _ in range(attempts):
             if in_context_examples:
                 response = model.generate_content(
                     [prompt],
                     generation_config=parameters,
-                    safety_settings=safety_settings,
+                    safety_settings=VIDEO_SAFETY_SETTINGS,
                 )
             else:
                 response = model.predict(
-                    prompt, **parameters, safety_settings=safety_settings
+                    prompt, **parameters, safety_settings=VIDEO_SAFETY_SETTINGS
                 )
             candidate = response.candidates[0]
             try:
@@ -406,7 +406,11 @@ def save_all_responses(
         datapath = f"data/inferred_labels/{folder}/{texts_name}_labels.csv"
     else:
         data = pd.DataFrame(
-            {"chunk": chunks, "claim": claims, "explanation": explanations}
+            {
+                "chunk": chunks,
+                "claim": claims,
+                "explanation": explanations,
+            }
         )
         datapath = f"data/inferred_labels/{texts_name}_labels.csv"
     data.to_csv(datapath, index=False)
@@ -444,7 +448,7 @@ def construct_in_context_examples(
     return examples, hold_out_set
 
 
-def infer_claims(video_id: str, transcript: list[dict]) -> Iterable[dict[str, Any]]:
+def infer_transcript_claims(transcript: list[dict]) -> Iterable[dict[str, Any]]:
     """For use in app"""
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_TUNED_MODEL_LOCATION)
 
@@ -462,6 +466,39 @@ def infer_claims(video_id: str, transcript: list[dict]) -> Iterable[dict[str, An
     )
 
     return all_responses
+
+
+def infer_multimodal_claims(
+    bucket_name: str, video_path: str, model_name: str = "gemini-1.5-flash-001"
+) -> Iterable[dict[str, Any]]:
+    vertexai.init(project=GCP_PROJECT_ID, location=GCP_LLM_LOCATION)
+    model = GenerativeModel(model_name=model_name)
+    print("FINE TUNING", video_path)
+    response = model.generate_content(
+        [
+            Part.from_uri("gs://" + video_path, mime_type="video/mp4"),
+            MULTIMODAL_RAPHAEL_PROMPT,
+        ],
+        safety_settings=VIDEO_SAFETY_SETTINGS,
+        generation_config={
+            "candidate_count": 1,
+            "max_output_tokens": 8192,
+            "temperature": 0,
+            "top_p": 1,
+        },
+    )
+
+    if not len(response.candidates):
+        raise Exception(f"No model output: possible reason: {response.prompt_feedback}")
+
+    candidate = response.candidates[0]
+    text = candidate.text
+    if text.startswith("```"):
+        text = text.strip("`")
+    if text.startswith("json"):
+        text = text[4:]
+    print(text)
+    return json.loads(text)
 
 
 if __name__ == "__main__":
@@ -493,7 +530,6 @@ if __name__ == "__main__":
         tuning("cj_tuned_multi_label_0", _training_data)
 
     if mode == "in_context":
-
         model = GenerativeModel(
             "gemini-1.5-pro-preview-0514"
         )  # or is it 0514 (May 15th update)

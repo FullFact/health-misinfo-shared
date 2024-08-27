@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if status == 'processing' %}
+<div class="alert alert-info text-center fixed-bottom mb-0 searching-for-claims" role="alert">
+  <div class="spinner-border spinner-grow-sm" role="status" style="border-width: .1rem;"></div> Analysing…
+</div>
+{% endif %}
+
+<div class="container-fluid mt-2 mb-6">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 my-4 text-center">
+      <div id="player"></div>
+        <video controls height=500>
+          <source src="https://storage.googleapis.com/{{video_path}}" type="video/mp4" />
+        </video>
+      <script>
+      let player;
+      let currentTimeIntervalId;
+      const $body = $('body');
+
+      window.onYouTubeIframeAPIReady = function() {
+      $body.on('click', '.claim', function (ev) {
+        ev.preventDefault();
+        clearAllHighlighting();
+        const $el = $(this);
+        const level = $el.data('level');
+        $el.addClass('highlight-claim ' + level);
+        highlightClaimInTranscript($el.data('start'), $el.data('end'), level);
+        jumpTo($el.data('start'), $el.data('end'));
+      });
+
+      function clearAllHighlighting() {
+        $('.claim-container .claim').removeClass('highlight-claim danger warning info');
+        $('.transcript-container .transcript-sentence').removeClass('active highlight-claim danger warning info');
+      }
+
+      function highlightClaimInTranscript(startTime, endTime, level) {
+        let scrolled = false;
+        $(".transcript-sentence").each(function () {
+          const $el = $(this);
+          if (startTime <= $el.data('start') && endTime >= $el.data('end')) {
+            $el.addClass('highlight-claim ' + level);
+            if (!scrolled) {
+              scrolled = true;
+              scrollToSentence($el);
+            }
+          } else {
+            $el.removeClass('highlight-claim danger warning info');
+          }
+        });
+      }
+      </script>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col">
+      {% if status == 'processing' %}
+      <h3 class="mt-2 searching-for-claims">
+        Analysing…
+      </h3>
+      {% elif status == 'complete' %}
+      <h3 class="mt-2">
+        {{ claims | count }} claims found
+      </h3>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-6 overflow-auto claim-container" style="height: 60vh;">
+      <div class="list-group list-group-flush">
+      {% for claim in claims %}
+        {% if claim['labels']['summary'] == 'worth checking' %}
+          {% set checkworthiness = 'danger' %}
+        {% elif claim['labels']['summary'] == 'may be worth checking' %}
+          {% set checkworthiness = 'warning' %}
+        {% else %}
+          {% set checkworthiness = 'info' %}
+        {% endif %}
+        <a class="list-group-item list-group-item-action mx-n2 claim"
+        data-level="{{ checkworthiness }}"
+        data-start="{{ claim['offset_start_s'] }}"
+        data-end="{{ claim['offset_end_s'] }}"
+        style="width:calc(100% + 2rem);"
+        title="{{ claim['raw_sentence_text'] }}"
+        href="https://www.youtube.com/watch?v={{ youtube_id }}&t={{ claim['offset_start_s'] }}s"
+        >
+          <strong>{{ loop.index }}.</strong>
+          {% if checkworthiness == 'danger' or checkworthiness == 'warning' %}
+          <span class="badge badge-{{ checkworthiness }}">&nbsp;</span>
+          {% endif %}
+
+          {{ claim['claim'] }}
+
+          {{ claim['offset_start_s'] | format_offset }}
+        </a>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if status == 'processing' %}
+<div class="alert alert-success text-center fixed-bottom mb-0 fade show" role="alert">
+  Done. Elapsed time: {{ started | time_diff }} seconds.
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% elif status == 'incomplete' %}
+<div class="alert alert-warning text-center fixed-bottom mb-0 fade show" role="alert">
+  This analysis may be incomplete.
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
+<style type="text/css">
+  .searching-for-claims { display: none; }
+</style>
+{% endblock %}

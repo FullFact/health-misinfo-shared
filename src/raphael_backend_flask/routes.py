@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import traceback
 
 from flask import (
     Blueprint,
@@ -12,6 +13,7 @@ from flask import (
     url_for,
 )
 from flask.typing import ResponseReturnValue
+from werkzeug import Response
 
 from raphael_backend_flask.auth import (
     auth,
@@ -20,9 +22,19 @@ from raphael_backend_flask.auth import (
     disable_user_sql,
 )
 from raphael_backend_flask.db import execute_sql
-from raphael_backend_flask.llm import extract_claims
-from raphael_backend_flask.process import download_transcript
-from raphael_backend_flask.youtube import extract_youtube_id
+from raphael_backend_flask.exceptions import FlashException
+from raphael_backend_flask.llm import (
+    extract_transcript_claims,
+    extract_multimodal_claims,
+)
+from raphael_backend_flask.multimodal import (
+    handle_multimodal_url,
+    valid_multimodal_video_url,
+)
+from raphael_backend_flask.youtube import (
+    handle_youtube_query,
+    valid_youtube_video_query,
+)
 
 routes = Blueprint("routes", __name__)
 
@@ -30,17 +42,25 @@ routes = Blueprint("routes", __name__)
 @routes.get("/")
 @auth.login_required
 def get_home() -> ResponseReturnValue:
-    current_user = auth.current_user()
+    user = auth.current_user()
+    if user is None:
+        return "", 401
+
     runs = execute_sql(
         """
-        SELECT *
-        FROM claim_extraction_runs, youtube_videos
-        WHERE youtube_id = youtube_videos.id
-        AND user_id = ?
-        ORDER BY timestamp DESC
-        LIMIT 20
-    """,
-        (current_user.user_id,)
+            SELECT
+                r.*,
+                y.id as youtube_id,
+                r.multimodal_video_id as multimodal_video_id,
+                coalesce(y.metadata, m.metadata) as metadata
+            FROM claim_extraction_runs r
+            LEFT OUTER JOIN youtube_videos y ON r.youtube_id = y.id
+            LEFT OUTER JOIN multimodal_videos m ON r.multimodal_video_id = m.id
+            WHERE user_id = ?
+            ORDER BY timestamp DESC
+            LIMIT 20
+        """,
+        (user.user_id,),
     )
     return render_template(
         "home.html",
@@ -48,22 +68,21 @@ def get_home() -> ResponseReturnValue:
     )
 
 
-@routes.post("/post")
+@routes.post("/run")
 @auth.login_required
-def post_youtube_url() -> ResponseReturnValue:
+def post_video_url() -> ResponseReturnValue:
     user = auth.current_user()
     query = request.form["q"]
-    try:
-        youtube_id = extract_youtube_id(query)
-    except Exception:
-        flash("That YouTube URL didn’t work", "danger")
-        return redirect(url_for("routes.get_home"))
+    if user is None:
+        return "", 401
+    user_id = user.user_id
 
-    try:
-        run_id = download_transcript(user.user_id, youtube_id)
-    except Exception as e:
-        flash(f"Something went wrong: {e}", "danger")
-        return redirect(url_for("routes.get_home"))
+    if valid_youtube_video_query(query):
+        run_id = handle_youtube_query(user_id, query)
+    elif valid_multimodal_video_url(query):
+        run_id = handle_multimodal_url(user_id, query)
+    else:
+        raise FlashException("Could not process video", category="danger")
 
     return redirect(url_for("routes.get_video_analysis", run_id=run_id))
 
@@ -73,11 +92,18 @@ def post_youtube_url() -> ResponseReturnValue:
 def get_video_analysis(run_id: int) -> ResponseReturnValue:
     runs = execute_sql(
         """
-        SELECT *
-        FROM claim_extraction_runs, youtube_videos
-        WHERE youtube_id = youtube_videos.id
-        AND claim_extraction_runs.id = ?
-    """,
+            SELECT
+                r.*,
+                y.id as youtube_id,
+                r.multimodal_video_id as multimodal_video_id,
+                coalesce(y.metadata, m.metadata) as metadata,
+                coalesce(y.transcript, '[]') as transcript,
+                m.video_path as video_path
+            FROM claim_extraction_runs r
+            LEFT OUTER JOIN youtube_videos y ON r.youtube_id = y.id
+            LEFT OUTER JOIN multimodal_videos m ON r.multimodal_video_id = m.id
+            WHERE r.id = ?
+        """,
         (run_id,),
     )
     if not runs:
@@ -95,16 +121,21 @@ def get_video_analysis(run_id: int) -> ResponseReturnValue:
         {**claim, **{"labels": json.loads(claim["labels"])}} for claim in claims_sql
     ]
 
+    mode = "transcript" if run["youtube_id"] else "multimodal"
+
     if run["status"] == "processing":
         if claims:
             run["status"] = "incomplete"
-        else:
-            claims = extract_claims(dict(run))
+        elif mode == "transcript":
+            claims = extract_transcript_claims(dict(run))
+        elif mode == "multimodal":
+            claims = extract_multimodal_claims(dict(run))
 
     return stream_template(
-        "video_analysis.html",
+        mode + "_analysis.html",
         claims=claims,
         started=datetime.now(),
+        mode=mode,
         **run,
     )
 
@@ -171,3 +202,14 @@ def patch_user(username: str) -> ResponseReturnValue:
 def disable_user(username: str) -> ResponseReturnValue:
     disable_user_sql(username)
     return "", 200
+
+
+@routes.errorhandler(Exception)
+def handle_exception(e) -> Response:
+    if isinstance(e, FlashException):
+        flash(e.message, e.category)
+    else:
+        flash("An unexpected error occurred.", category="danger")
+        print(traceback.format_exc())
+        print(e)
+    return redirect(url_for("routes.get_home"))

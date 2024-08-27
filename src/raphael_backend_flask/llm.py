@@ -1,22 +1,29 @@
 import json
 from typing import Any, Iterable
 
-from health_misinfo_shared.fine_tuning import infer_claims
+from health_misinfo_shared.fine_tuning import (
+    infer_transcript_claims,
+    infer_multimodal_claims,
+)
+from raphael_backend_flask import multimodal
 from raphael_backend_flask.db import (
     execute_sql,
     update_claim_extraction_run,
 )
 from health_misinfo_shared.label_scoring import get_claim_summary
-from raphael_backend_flask.process import refine_offsets
+from raphael_backend_flask.transcript import refine_offsets
 
 
-def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
+def extract_transcript_claims(run: dict) -> Iterable[dict[str, Any]]:
     sentences = run["transcript"]
-    inferred_claims = infer_claims(run["id"], sentences)
+    inferred_claims = infer_transcript_claims(sentences)
 
     for response in inferred_claims:
-        claims = response.get("response")
+        claims = response.get("response", {})
         chunk = response.get("chunk")
+        if not chunk:
+            raise Exception("Could not extract claims: got no chunks")
+
         for claim in claims:
             labels_dict = claim.get("labels", {})
             labels_dict["summary"] = get_claim_summary(labels_dict)
@@ -40,6 +47,32 @@ def extract_claims(run: dict) -> Iterable[dict[str, Any]]:
             )
             parsed_claim["labels"] = labels_dict
             yield parsed_claim
+
+    # Mark transcript done
+    update_claim_extraction_run(run["id"], status="complete")
+
+
+def extract_multimodal_claims(run: dict) -> Iterable[dict[str, Any]]:
+    claims = infer_multimodal_claims(multimodal.GCS_BUCKET, run["video_path"])
+
+    for claim in claims:
+        labels_dict = claim.get("labels", {})
+        labels_dict["summary"] = get_claim_summary(labels_dict)
+        parsed_claim = {
+            "run_id": run["id"],
+            "claim": claim["claim"],
+            "raw_sentence_text": claim["original_text"],
+            "labels": json.dumps(labels_dict),
+            "offset_start_s": claim["timestamp"]["start"],
+            "offset_end_s": claim["timestamp"].get("end", None),
+        }
+
+        execute_sql(
+            f"INSERT INTO inferred_claims ({', '.join(parsed_claim.keys())}) VALUES ({', '.join(['?'] * len(parsed_claim))})",
+            tuple(parsed_claim.values()),
+        )
+        parsed_claim["labels"] = labels_dict
+        yield parsed_claim
 
     # Mark transcript done
     update_claim_extraction_run(run["id"], status="complete")

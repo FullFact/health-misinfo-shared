@@ -24,7 +24,7 @@ VIDEO_SAFETY_SETTINGS = {
 
 class GeminiModel:
     DEFAULT_MODEL = "gemini-1.5-flash-001"
-    DEFAULT_LOCATION = "europe-west2"
+    DEFAULT_LOCATION = "europe-west2"  # "us-central1" if this has issues...
 
     def __init__(
         self,
