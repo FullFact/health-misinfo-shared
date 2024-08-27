@@ -27,17 +27,15 @@ def extract_transcript_claims(run: dict) -> Iterable[dict[str, Any]]:
         for claim in claims:
             labels_dict = claim.get("labels", {})
             labels_dict["summary"] = get_claim_summary(labels_dict)
-            # checkworthiness = claim.get("labels", {}).get("summary", "na")
-            # checkworthiness will be one of "worth checking", "may be worth checking" or "not worth checking"
             parsed_claim = {
                 "run_id": run["id"],
-                "claim": claim["claim"],
-                "raw_sentence_text": claim["original_text"],
+                "claim": claim.get("claim", "Probably a bug - please report"),
+                "raw_sentence_text": claim.get("original_text", ""),
                 "labels": json.dumps(labels_dict),
-                "offset_start_s": chunk["start_offset"],
+                "offset_start_s": chunk.get("start_offset", 0),
             }
-            if chunk["end_offset"] is not None:
-                parsed_claim["offset_end_s"] = chunk["end_offset"]
+            if end := chunk.get("end_offset") is not None:
+                parsed_claim["offset_end_s"] = end
 
             parsed_claim = refine_offsets(parsed_claim, sentences)
 
@@ -58,8 +56,9 @@ def extract_multimodal_claims(run: dict) -> Iterable[dict[str, Any]]:
     for claim in claims:
         labels_dict = claim.get("labels", {})
         labels_dict["summary"] = get_claim_summary(labels_dict)
-        start = claim["timestamp"]["start"]
-        end = claim["timestamp"].get("end", None)
+        timestamp = claim.get("timestamp", {})
+        start = timestamp.get("start", 0)
+        end = timestamp.get("end", 0)
 
         # Correct for times often being returned as m.ss rather than just seconds...
         diff = end - start
@@ -69,8 +68,8 @@ def extract_multimodal_claims(run: dict) -> Iterable[dict[str, Any]]:
 
         parsed_claim = {
             "run_id": run["id"],
-            "claim": claim["claim"],
-            "raw_sentence_text": claim["original_text"],
+            "claim": claim.get("claim", "Probably a bug - please report"),
+            "raw_sentence_text": claim.get("original_text", ""),
             "labels": json.dumps(labels_dict),
             "offset_start_s": start,
             "offset_end_s": end,
