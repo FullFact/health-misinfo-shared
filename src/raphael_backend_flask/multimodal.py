@@ -21,8 +21,14 @@ def handle_multimodal_url(user_id: int, url: str) -> int:
     if not info:
         raise FlashException("Could not process video.")
 
+    title = info.get("title")
+    if not title or title.startswith("Video by"):
+        desc = info.get("description")
+        if desc and len(desc) < 150:
+            title = desc
+
     metadata = {
-        "title": info["title"],
+        "title": title,
         "url": info["webpage_url"],
     }
 
@@ -40,7 +46,6 @@ def upload_file_to_gcs(local_filepath: str, bucket_name: str, folder: str) -> st
     blob.upload_from_filename(local_filepath)
     blob.make_public()
     full_location = bucket_name + "/" + blob_location
-    print(full_location)
     return full_location
 
 
@@ -75,8 +80,11 @@ def is_downloadable(url: str) -> bool:
         "noplaylist": True,  # playlists aren't valid
     }
     with yt_dlp.YoutubeDL(opts) as dl:
-        info = dl.extract_info(url)
-        return bool(info)
+        try:
+            info = dl.extract_info(url)
+            return bool(info)
+        except Exception:
+            return False
 
 
 def valid_multimodal_video_url(url: str) -> bool:
