@@ -224,7 +224,7 @@ HEALTH_INFER_MULTI_LABEL_PROMPT = """
                     Give the label "harmless" if beleiving this claim is unlikely to cause any harm to an individual.
                     Give the label "can't tell" if the potential harm of the claim cannot be determined.
 
-            5 - Return a list of JSON format output as follows:
+            4 - Return a list of JSON format output as follows:
                         [
                             {
                                 "claim": <claim being made in the sentence. You can reword it slightly to make it make sense without context, but do not change the meaning of the claim in doing so.>,

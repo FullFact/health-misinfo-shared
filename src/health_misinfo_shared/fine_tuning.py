@@ -4,6 +4,7 @@
 import json
 from typing import Any, Iterable
 from pathlib import Path
+import json
 import pandas as pd
 from google.auth import default
 import vertexai
@@ -444,7 +445,7 @@ def construct_in_context_examples(
 
             t["labels"]["summary"] = get_claim_summary(t["labels"])
 
-        examples += f"Output: {target}\n"
+        examples += f"Output: {json.dumps(target)}\n"
     return examples, hold_out_set
 
 
