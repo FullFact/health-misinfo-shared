@@ -6,5 +6,4 @@ timeout = 1800
 
 
 def on_starting(server):
-    print("LOLOLO")
     run_migrations()

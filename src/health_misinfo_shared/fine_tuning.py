@@ -30,7 +30,7 @@ from health_misinfo_shared.claim_format_checker import (
 
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
-GCP_LLM_LOCATION = "us-central1"  # NB: Gemini is not available in europe-west2 (yet?)
+GCP_LLM_LOCATION = "europe-west4"  # NB: Gemini is not available in europe-west2 (yet?)
 GCP_TUNED_MODEL_LOCATION = "europe-west4"  # where we do fine tuning/model storage
 CHECKWORTHY_EXPLANATIONS = ["high harm", "citation", "low harm"]
 UNCHECKWORTHY_EXPLANATIONS = ["nothing to check", "hedged claim"]
@@ -474,7 +474,6 @@ def infer_multimodal_claims(
 ) -> Iterable[dict[str, Any]]:
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_LLM_LOCATION)
     model = GenerativeModel(model_name=model_name)
-    print("FINE TUNING", video_path)
     response = model.generate_content(
         [
             Part.from_uri("gs://" + video_path, mime_type="video/mp4"),
