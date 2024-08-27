@@ -23,7 +23,7 @@
       <div class="list-group list-group-flush">
       {% for run in runs %}
         <a class="list-group-item list-group-item-action mx-n2" style="width:calc(100% + 2rem);" href="{{ url_for('routes.get_video_analysis', run_id=run['id']) }}">
-          <span class="text-muted"><em>{{ run['timestamp'][:10] }}</em></span> · {{ run['metadata']['title'] }}
+          <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url={{ run['metadata'].get('url', 'https://youtube.com') }}"> <span class="text-muted"><em>{{ run['timestamp'][:10] }}</em></span> · {{ run['metadata']['title'] }}
         </a>
       {% endfor %}
       </div>
