@@ -58,13 +58,21 @@ def extract_multimodal_claims(run: dict) -> Iterable[dict[str, Any]]:
     for claim in claims:
         labels_dict = claim.get("labels", {})
         labels_dict["summary"] = get_claim_summary(labels_dict)
+        start = claim["timestamp"]["start"]
+        end = claim["timestamp"].get("end", None)
+
+        # Correct for times often being returned as 100ths of a second...
+        if end - start < 1:
+            start = start * 100
+            end = end * 100
+
         parsed_claim = {
             "run_id": run["id"],
             "claim": claim["claim"],
             "raw_sentence_text": claim["original_text"],
             "labels": json.dumps(labels_dict),
-            "offset_start_s": claim["timestamp"]["start"],
-            "offset_end_s": claim["timestamp"].get("end", None),
+            "offset_start_s": start,
+            "offset_end_s": end,
         }
 
         execute_sql(
