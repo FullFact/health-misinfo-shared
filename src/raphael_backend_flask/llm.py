@@ -34,7 +34,8 @@ def extract_transcript_claims(run: dict) -> Iterable[dict[str, Any]]:
                 "labels": json.dumps(labels_dict),
                 "offset_start_s": chunk.get("start_offset", 0),
             }
-            if end := chunk.get("end_offset") is not None:
+            end = chunk.get("end_offset")
+            if end is not None:
                 parsed_claim["offset_end_s"] = end
 
             parsed_claim = refine_offsets(parsed_claim, sentences)
