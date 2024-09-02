@@ -9,7 +9,7 @@ from vertexai.preview.generative_models import GenerativeModel
 import vertexai.preview.generative_models as generative_models
 from health_misinfo_shared import youtube_api
 from health_misinfo_shared.prompts import HEALTH_CLAIM_PROMPT, HEALTH_HARM_PROMPT
-from health_misinfo_shared.data_parsing import tidy_response
+from health_misinfo_shared.data_parsing import parse_model_json_output
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
@@ -37,9 +37,7 @@ def generate_reponse(transcript: str) -> list[dict]:
     response = gemini_pro_model.generate_content(
         prompt, safety_settings=safety_settings, generation_config=generation_config
     )
-    response_text = tidy_response(response.text)
-    jsonl_obj = json.loads(response_text)
-    return jsonl_obj
+    return parse_model_json_output(response.text)
 
 
 def process_video(video_id: str, transcript: list[dict]) -> Iterable[dict[str, Any]]:
