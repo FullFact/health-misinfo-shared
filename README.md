@@ -51,7 +51,7 @@ Use `fine_tuning.py` to fine-tune a model and get responses from it.
 
 ## Model types
 
-**simple-type** model: given a transcript, it is trained to return a list of harmful health-related claims 
+**simple-type** model: given a transcript, it is trained to return a list of harmful health-related claims
 
 **explaination-type** model: given a transcript, it is trained to return a list of health-related claims with an explanation label predicting how checkworthy it is and why. These labels (for concepts like "high harm", "cites study" etc.) allow us to add expert knowledge into the training data.
 
@@ -135,6 +135,14 @@ The scores and weights can be found in [the label scoring file](src/health_misin
 
 ```mermaid
 erDiagram
+
+  multimodal_videos ||--o{ claim_extraction_runs : runs
+  multimodal_videos {
+    integer id
+    text metadata
+    video_path text
+  }
+
   youtube_videos ||--o{ claim_extraction_runs : runs
   youtube_videos {
     text id
@@ -146,6 +154,7 @@ erDiagram
   claim_extraction_runs {
     integer id PK
     text youtube_id FK
+    integer multimodal_video_id FK
     text model
     text status
     integer timestamp
