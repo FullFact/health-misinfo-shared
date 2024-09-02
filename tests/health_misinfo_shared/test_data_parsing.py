@@ -1,4 +1,4 @@
-from pytest import mark, param
+from pytest import mark, param, raises
 from health_misinfo_shared.data_parsing import parse_model_json_output
 
 
@@ -120,7 +120,8 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
 def test_parse_model_json_output(
     model_output: str, expected: list[dict[str, str]], should_succeed: bool
 ):
-    try:
-        assert parse_model_json_output(model_output) == expected and should_succeed
-    except Exception:
-        assert not should_succeed
+    if should_succeed:
+        assert parse_model_json_output(model_output) == expected
+    else:
+        with raises(Exception):
+            assert parse_model_json_output(model_output)
