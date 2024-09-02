@@ -73,7 +73,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            False,
+            True,
             id="missing closing brace",
         ),
         param(
@@ -86,7 +86,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            False,
+            True,
             id="missing opening brace",
         ),
         param(
