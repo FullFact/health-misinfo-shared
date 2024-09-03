@@ -123,5 +123,5 @@ def test_parse_model_json_output(
     if should_succeed:
         assert parse_model_json_output(model_output) == expected
     else:
-        with raises(Exception):
+        with raises(ValueError):
             assert parse_model_json_output(model_output)
