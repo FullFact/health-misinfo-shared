@@ -94,6 +94,7 @@ curl http://127.0.0.1:3000/api/register -i -X POST \
 curl http://127.0.0.1:3000/api/users/big -i -X DELETE \
   -u fullfact:changeme
 ```
+Note that this disables a user but does not delete it. 
 
 ### Changing a user's password (admin only)
 only for this mvp (as a product users should control their own credentials)
@@ -103,7 +104,8 @@ curl http://127.0.0.1:3000/api/users/big -i -X PATCH \
   -F password=newpassword
 ```
 
-
+When using above calls on the live demo version, the user/password specified by `-u` should be the main `fullfact` account (password in Bitwarden); and the URL should be `https://raphael.fullfact.org/api/` etc. The account being modified (e.g. `big` in the above examples) will be part of the URL for the disable/change password calls.
+ 
 ## Getting claims for YouTube captions
 
 For building a set of labelled data, we want to get health claims, without all the other stuff we're predicting.
