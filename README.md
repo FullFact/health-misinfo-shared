@@ -84,14 +84,14 @@ Users are stored in the database. To add a user, assuming the application is run
 ```sh
 curl http://127.0.0.1:3000/api/register -i -X POST \
   -u fullfact:changeme \
-  -F username=big \
-  -F password=chungus \
+  -F username=alice \
+  -F password=abc123 \
   -F admin=on  # this line is optional, marks a user as admin
 ```
 
 ### Disabling a user (admin only)
 ```sh
-curl http://127.0.0.1:3000/api/users/big -i -X DELETE \
+curl http://127.0.0.1:3000/api/users/alice -i -X DELETE \
   -u fullfact:changeme
 ```
 Note that this disables a user but does not delete it. 
@@ -99,12 +99,12 @@ Note that this disables a user but does not delete it.
 ### Changing a user's password (admin only)
 only for this mvp (as a product users should control their own credentials)
 ```sh
-curl http://127.0.0.1:3000/api/users/big -i -X PATCH \
+curl http://127.0.0.1:3000/api/users/alice -i -X PATCH \
   -u fullfact:changeme \
   -F password=newpassword
 ```
 
-When using above calls on the live demo version, the user/password specified by `-u` should be the main `fullfact` account (password in Bitwarden); and the URL should be `https://raphael.fullfact.org/api/` etc. The account being modified (e.g. `big` in the above examples) will be part of the URL for the disable/change password calls.
+When using above calls on the live demo version, the user/password specified by `-u` should be the main `fullfact` account (password in Bitwarden); and the URL should be `https://raphael.fullfact.org/api/` etc. 
  
 ## Getting claims for YouTube captions
 
