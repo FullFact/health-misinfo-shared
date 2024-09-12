@@ -1,10 +1,10 @@
 import json
-import re
 import os
+import re
 import tempfile
 
-from google.cloud import storage
 import yt_dlp
+from google.cloud import storage
 
 from raphael_backend_flask.db import create_multimodal_claim_extraction_run
 from raphael_backend_flask.exceptions import FlashException

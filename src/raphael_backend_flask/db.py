@@ -1,12 +1,11 @@
 import os
 import sqlite3
+from pathlib import Path
 from sqlite3 import Connection, Row
 from typing import Any
-from pathlib import Path
 
 from flask import g
 from werkzeug.security import generate_password_hash
-
 
 DB_PATH = os.getenv("DB_PATH", "database.db")
 MIGRATION_VERSION = 2

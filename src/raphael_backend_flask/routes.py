@@ -1,6 +1,6 @@
-from datetime import datetime
 import json
 import traceback
+from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -18,14 +18,14 @@ from werkzeug import Response
 from raphael_backend_flask.auth import (
     auth,
     create_user_sql,
-    update_user_password_sql,
     disable_user_sql,
+    update_user_password_sql,
 )
 from raphael_backend_flask.db import execute_sql
 from raphael_backend_flask.exceptions import FlashException
 from raphael_backend_flask.llm import (
-    extract_transcript_claims,
     extract_multimodal_claims,
+    extract_transcript_claims,
 )
 from raphael_backend_flask.multimodal import (
     handle_multimodal_url,

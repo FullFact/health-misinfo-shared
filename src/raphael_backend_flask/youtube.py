@@ -1,5 +1,5 @@
-import re
 import json
+import re
 from html import unescape
 from urllib.parse import parse_qs, urlparse
 

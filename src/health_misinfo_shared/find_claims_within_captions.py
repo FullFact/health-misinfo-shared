@@ -1,15 +1,13 @@
-import os
 import json
+import os
 import time
-from typing import Iterator, Any
+from typing import Any, Iterator
 
 import vertexai
-from vertexai.language_models import TextGenerationModel
-from vertexai.generative_models import GenerativeModel, Part
+from vertexai.generative_models import GenerativeModel
 
-from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
 from health_misinfo_shared.data_parsing import parse_model_json_output
-
+from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)

@@ -5,17 +5,18 @@
 # NOTE: the official API does't actually give you captions (unless you own the video), so
 # we parse the raw XML file to get a temporary link to the captions and download those.
 
+import json
 import os
 import re
-import json
 import string
 from pathlib import Path
 from typing import Iterable
-import requests
-from langdetect import detect
+
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
+import requests
+from langdetect import detect
 
 scopes = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 YT_CREDENTIALS = None

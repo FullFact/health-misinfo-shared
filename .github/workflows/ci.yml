@@ -32,13 +32,13 @@ jobs:
         run: poetry install
 
       # - name: Check typing with mypy
-      #   run: poetry run mypy --install-types --non-interactive src
+      # run: poetry run mypy --install-types --non-interactive src
 
-      # - name: Check code formatting with black
-      #   run: poetry run black --check .
+      - name: Check code formatting with black
+        run: poetry run black --check .
 
-      # - name: Run isort
-      #   run: poetry run isort --check-only .
+      - name: Run isort
+        run: poetry run isort --check-only src
 
       # - name: PEP8
       #   run: poetry run flake8 .
