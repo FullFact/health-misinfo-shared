@@ -13,7 +13,6 @@ from flask import (
     url_for,
 )
 from flask.typing import ResponseReturnValue
-from werkzeug import Response
 
 from raphael_backend_flask.auth import (
     auth,
@@ -82,7 +81,7 @@ def post_video_url() -> ResponseReturnValue:
     elif valid_multimodal_video_url(query):
         run_id = handle_multimodal_url(user_id, query)
     else:
-        raise FlashException("Could not process video", category="danger")
+        raise FlashException("Could not process video")
 
     return redirect(url_for("routes.get_video_analysis", run_id=run_id))
 

@@ -62,7 +62,7 @@ def extract_youtube_id(url: str) -> str:
     def check_id_length(youtube_id: str) -> str:
         # YouTube video IDs are 11 characters
         if len(youtube_id) != 11:
-            raise FlashException("Not a valid YouTube video ID", category="danger")
+            raise FlashException("Not a valid YouTube video ID")
         return youtube_id
 
     parsed = urlparse(url)
