@@ -388,23 +388,27 @@ def save_all_responses(
             else:
                 explanations.append(claim.get("explanation"))
     if multilabel:
-        data = pd.DataFrame({
-            "chunk": chunks,
-            "claim": claims,
-            "understandability": understandable,
-            "type of claim": type_of_claim,
-            "medical claim type": med_type,
-            "support": support,
-            "harm": harm,
-            "summary": summary,
-        })
+        data = pd.DataFrame(
+            {
+                "chunk": chunks,
+                "claim": claims,
+                "understandability": understandable,
+                "type of claim": type_of_claim,
+                "medical claim type": med_type,
+                "support": support,
+                "harm": harm,
+                "summary": summary,
+            }
+        )
         datapath = f"data/inferred_labels/{folder}/{texts_name}_labels.csv"
     else:
-        data = pd.DataFrame({
-            "chunk": chunks,
-            "claim": claims,
-            "explanation": explanations,
-        })
+        data = pd.DataFrame(
+            {
+                "chunk": chunks,
+                "claim": claims,
+                "explanation": explanations,
+            }
+        )
         datapath = f"data/inferred_labels/{texts_name}_labels.csv"
     data.to_csv(datapath, index=False)
 
@@ -512,9 +516,9 @@ if __name__ == "__main__":
     if mode == "train":
         # Fine-tune a new model:
         # _training_data = make_training_set()
-        _training_data = make_training_set_multi_label([
-            "data/multi_label_training_v1.csv"
-        ])
+        _training_data = make_training_set_multi_label(
+            ["data/multi_label_training_v1.csv"]
+        )
         _training_data.to_json(
             "data/multi_label_training_v1.json", orient="records", lines=True
         )
