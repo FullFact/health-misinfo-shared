@@ -23,8 +23,10 @@
           width: '400px',
           height: '200px',
           videoId: '{{ youtube_id }}',
+          host: 'https://www.youtube-nocookie.com',
           playerVars: {
-            'playsinline': 1
+            'playsinline': 1,
+            origin: window.location.host
           },
           events: {
             'onStateChange': onPlayerStateChange

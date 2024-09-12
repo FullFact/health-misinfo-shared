@@ -1,8 +1,8 @@
 import pytest
 
-from raphael_backend_flask import process
+from raphael_backend_flask import transcript
 
-transcript = [
+input_transcript = [
     {"start": 0.04, "sentence_text": "2020 the world was turned upside down"},
     {"start": 2.679, "sentence_text": "when covid-19 took over now four years"},
     {"start": 6.24, "sentence_text": "later the conversation continues as a"},
@@ -52,6 +52,6 @@ def test_refine_offsets(sentence, offset_start_s, offset_end_s):
         "offset_start_s": 0.04,
         "offset_end_s": None,
     }
-    result = process.refine_offsets(claim, transcript)
+    result = transcript.refine_offsets(claim, input_transcript)
     assert result["offset_start_s"] == offset_start_s
     assert result["offset_end_s"] == offset_end_s

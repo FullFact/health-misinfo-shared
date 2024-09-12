@@ -1,37 +1,51 @@
 import os
 import sqlite3
+from pathlib import Path
 from sqlite3 import Connection, Row
 from typing import Any
 
 from flask import g
 from werkzeug.security import generate_password_hash
 
-Table = tuple[str, dict, list[str]]
-"""
-Not overdoing this
-"""
-
-
 DB_PATH = os.getenv("DB_PATH", "database.db")
+MIGRATION_VERSION = 2
 
 
-def execute_statement_unsafe(
-    db: Connection, statement: str, params: tuple[str, ...] = ()
-) -> None:
-    cur = db.cursor()
-    cur.execute(statement, params)
-    db.commit()
+def run_migrations() -> None:
+    conn = sqlite3.connect(f"{DB_PATH}")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS migrations (
+            version INTEGER NOT NULL UNIQUE DEFAULT 0,
+            performed DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    ).close()
 
+    cur = conn.execute("SELECT max(version) from migrations")
+    current_version = cur.fetchone()[0] or 0
+    cur.close()
 
-def create_table(db: Connection, statement: str) -> None:
-    execute_statement_unsafe(db, statement)
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    print(f"Migration Current: {current_version} Target: {MIGRATION_VERSION}")
+    if current_version < MIGRATION_VERSION:
+        print(f"Upgrading to version {MIGRATION_VERSION}...")
+        for i in range(current_version + 1, MIGRATION_VERSION + 1):
+            print(f"Running migration {i}...")
+            script = Path(os.path.join(current_dir, f"migrations/{i}.sql")).read_text()
+            conn.executescript(script).close()
+            conn.execute("INSERT INTO migrations (version) VALUES (?);", (i,)).close()
+
+    if current_version == 0:
+        create_init_user(conn)
+
+    conn.commit()
+    conn.close()
 
 
 def get_db_connection() -> Connection:
     conn = g.get("_database")
     if not conn:
-        if not os.path.isfile(DB_PATH):
-            create_database(DB_PATH)
         conn = g._database = sqlite3.connect(f"file:{DB_PATH}?mode=rw", uri=True)
     conn.row_factory = Row
     return conn
@@ -49,7 +63,37 @@ def execute_sql(sql: str, params: tuple[Any, ...] = ()) -> list[Row]:
     return data
 
 
-def create_claim_extraction_run(
+def create_multimodal_claim_extraction_run(
+    user_id: int,
+    video_path: str,
+    metadata: str,
+) -> int:
+    result = execute_sql(
+        "INSERT INTO multimodal_videos (video_path, metadata) VALUES (?, ?) RETURNING id",
+        (
+            video_path,
+            metadata,
+        ),
+    )
+    video_id = result[0]["id"]
+
+    result = execute_sql(
+        """
+        INSERT INTO claim_extraction_runs (user_id, multimodal_video_id, model, status)
+        VALUES (?, ?, ?, ?)
+        RETURNING id
+        """,
+        (
+            user_id,
+            video_id,
+            "gemini-1.5-flash-001",
+            "processing",
+        ),
+    )
+    return result[0]["id"]
+
+
+def create_youtube_claim_extraction_run(
     user_id: int,
     youtube_id: str,
     metadata: str,
@@ -90,78 +134,11 @@ def update_claim_extraction_run(
     )
 
 
-# Note that metadata and transcript contain JSON data
-table_youtube_videos = """
-    CREATE TABLE IF NOT EXISTS youtube_videos (
-        id TEXT PRIMARY KEY,
-        metadata TEXT,
-        transcript TEXT
-    );
-    """
-
-table_claim_extraction_runs = """
-    CREATE TABLE IF NOT EXISTS claim_extraction_runs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        youtube_id TEXT,
-        model TEXT,
-        status TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id),
-        FOREIGN KEY (youtube_id) REFERENCES youtube_videos (id)
-    );
-    """
-
-# Note that labels contains JSON data
-table_inferred_claims = """
-    CREATE TABLE IF NOT EXISTS inferred_claims (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        run_id INTEGER,
-        claim TEXT,
-        raw_sentence_text TEXT,
-        labels TEXT,
-        offset_start_s REAL,
-        offset_end_s REAL,
-        FOREIGN KEY (run_id) REFERENCES claim_extraction_runs (id)
-    );
-    """
-
-# Note that labels contains JSON data
-table_training_claims = """
-    CREATE TABLE IF NOT EXISTS training_claims (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        youtube_id TEXT,
-        claim TEXT,
-        labels TEXT
-    );
-    """
-
-# Note that BOOL in sqlite is just INTEGER
-table_users = """
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        password_hash TEXT,
-        admin BOOL NOT NULL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-"""
-
-
-def create_database(path: str) -> None:
-    db: Connection = sqlite3.connect(path)
-
-    create_table(db, table_youtube_videos)
-    create_table(db, table_claim_extraction_runs)
-    create_table(db, table_training_claims)
-    create_table(db, table_inferred_claims)
-    create_table(db, table_users)
-
+def create_init_user(conn: Connection) -> None:
     default_username: str = "fullfact"
     default_password: str = generate_password_hash("changeme")
-    execute_statement_unsafe(
-        db,
-        f"""
+    conn.execute(
+        """
         INSERT INTO users (username, password_hash, admin)
         VALUES (?, ?, TRUE)
         ON CONFLICT (username) DO NOTHING
@@ -170,6 +147,5 @@ def create_database(path: str) -> None:
             default_username,
             default_password,
         ),
-    )
-
-    db.close()
+    ).close()
+    conn.commit()
