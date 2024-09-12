@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
   workflow_dispatch:
 
 concurrency:
@@ -24,20 +25,20 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version-file: 'pyproject.toml'
-          cache: 'poetry'
+          python-version-file: "pyproject.toml"
+          cache: "poetry"
 
       - name: Install python dependencies
         run: poetry install
 
       # - name: Check typing with mypy
-      #   run: poetry run mypy --install-types --non-interactive src
+      # run: poetry run mypy --install-types --non-interactive src
 
-      # - name: Check code formatting with black
-      #   run: poetry run black --check .
+      - name: Check code formatting with black
+        run: poetry run black --check .
 
-      # - name: Run isort
-      #   run: poetry run isort --check-only .
+      - name: Run isort
+        run: poetry run isort --check-only src
 
       # - name: PEP8
       #   run: poetry run flake8 .

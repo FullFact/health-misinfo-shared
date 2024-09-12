@@ -1,31 +1,3 @@
-import json
-
-import requests
-
-from raphael_backend_flask.db import create_claim_extraction_run
-from raphael_backend_flask.youtube import download_captions, extract_title
-
-
-def download_transcript(user_id: int, youtube_id: str) -> int:
-    youtube_url = f"https://youtube.com/watch?v={youtube_id}"
-    with requests.get(youtube_url, timeout=60) as resp:
-        resp.raise_for_status()
-        video_html = resp.text
-
-    title = extract_title(video_html)
-    metadata = {"title": title}
-    transcript = download_captions(video_html)
-
-    # Add transcript text
-    claim_extraction_run_id = create_claim_extraction_run(
-        user_id,
-        youtube_id,
-        json.dumps(metadata),
-        json.dumps(transcript),
-    )
-    return claim_extraction_run_id
-
-
 def refine_offsets(claim: dict, transcript: dict) -> dict:
     # figure out the bit of the transcript that the chunk refers to
     start_idx = 0

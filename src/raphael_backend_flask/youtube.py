@@ -1,10 +1,4 @@
-# Sample Python code for youtube.search.list
-# See instructions for running these code samples locally:
-# https://developers.google.com/explorer-help/code-samples#python
-# Handy getting-started guide https://developers.google.com/youtube/v3/quickstart/python
-# NOTE: the official API does't actually give you captions (unless you own the video), so
-# we parse the raw XML file to get a temporary link to the captions and download those.
-
+import json
 import re
 from html import unescape
 from urllib.parse import parse_qs, urlparse
@@ -12,7 +6,10 @@ from urllib.parse import parse_qs, urlparse
 import requests
 
 from health_misinfo_shared.youtube_api import clean_str
+from raphael_backend_flask.db import create_youtube_claim_extraction_run
+from raphael_backend_flask.exceptions import FlashException
 
+title_re = re.compile("<title>(.*) - YouTube</title>")
 urls_re = re.compile('(https://www.youtube.com/api/timedtext[^"]+lang=en)')
 caption_re = re.compile(
     r'<text start="(?P<start>[0-9\.]*?)" dur="[0-9\.]*?">(?P<sentence_text>[^<]*)<\/text>'
@@ -34,14 +31,30 @@ def download_captions(html: str) -> list[dict]:
     return sentences
 
 
-title_re = re.compile("<title>(.*) - YouTube</title>")
+def handle_youtube_query(user_id: int, id_or_url: str) -> int:
+    youtube_id = extract_youtube_id(id_or_url)
+    youtube_url = f"https://youtube.com/watch?v={youtube_id}"
+    with requests.get(youtube_url, timeout=60) as resp:
+        resp.raise_for_status()
+        video_html = resp.text
+
+    title = extract_title(video_html)
+    metadata = {"title": title}
+    transcript = download_captions(video_html)
+
+    claim_extraction_run_id = create_youtube_claim_extraction_run(
+        user_id,
+        youtube_id,
+        json.dumps(metadata),
+        json.dumps(transcript),
+    )
+    return claim_extraction_run_id
 
 
 def extract_title(html: str) -> str:
     titles = title_re.findall(html)
     if len(titles) != 1:
-        raise Exception("Couldn’t extract a title for that video")
-
+        raise FlashException("Couldn’t extract a title for that video")
     return unescape(titles[0])
 
 
@@ -49,7 +62,7 @@ def extract_youtube_id(url: str) -> str:
     def check_id_length(youtube_id: str) -> str:
         # YouTube video IDs are 11 characters
         if len(youtube_id) != 11:
-            raise Exception("Not a valid YouTube video ID")
+            raise FlashException("Not a valid YouTube video ID")
         return youtube_id
 
     parsed = urlparse(url)
@@ -61,3 +74,11 @@ def extract_youtube_id(url: str) -> str:
 
     queries = parse_qs(parsed.query)
     return check_id_length(queries["v"][0])
+
+
+def valid_youtube_video_query(query: str) -> bool:
+    try:
+        extract_youtube_id(query)
+        return True
+    except Exception:
+        return False
