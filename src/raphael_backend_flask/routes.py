@@ -205,7 +205,11 @@ def disable_user(username: str) -> ResponseReturnValue:
 
 
 @routes.errorhandler(Exception)
-def handle_exception(e) -> Response:
+def handle_exception(e) -> ResponseReturnValue:
+    if request.path.startswith("/api/"):
+        # if it looks like an API endpoint, return JSON
+        return jsonify(message=str(e)), 500
+
     if isinstance(e, FlashException):
         flash(e.message, e.category)
     else:
