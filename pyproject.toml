@@ -33,6 +33,7 @@ flask-cors = "^4.0.0"
 gunicorn = "^22.0.0"
 fsspec = "^2024.5.0"
 gcsfs = "^2024.5.0"
+json-repair = "^0.28.4"
 yt-dlp = "^2024.8.6"
 
 

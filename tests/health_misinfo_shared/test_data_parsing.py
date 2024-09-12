@@ -1,9 +1,9 @@
-from pytest import mark, param
+from pytest import mark, param, raises
 from health_misinfo_shared.data_parsing import parse_model_json_output
 
 
 @mark.parametrize(
-    "model_output,expected,should_fail",
+    "model_output,expected,should_succeed",
     [
         param(
             """
@@ -16,7 +16,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            False,
+            True,
             id="perfect case",
         ),
         param(
@@ -31,7 +31,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            False,
+            True,
             id="prefixed with json, surrounded by backticks",
         ),
         param(
@@ -46,7 +46,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            False,
+            True,
             id="missing final backticks",
         ),
         param(
@@ -60,7 +60,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            False,
+            True,
             id="only backticks at the end",
         ),
         param(
@@ -98,7 +98,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            True,
+            False,
             id="not json",
         ),
         param(
@@ -112,15 +112,16 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
                 {"claim": "claim 1"},
                 {"claim": "claim 2"},
             ],
-            False,
+            True,
             id="single quotes",
         ),
     ],
 )
 def test_parse_model_json_output(
-    model_output: str, expected: list[dict[str, str]], should_fail: bool
+    model_output: str, expected: list[dict[str, str]], should_succeed: bool
 ):
-    try:
-        assert parse_model_json_output(model_output) == expected and not should_fail
-    except Exception:
-        assert should_fail
+    if should_succeed:
+        assert parse_model_json_output(model_output) == expected
+    else:
+        with raises(ValueError):
+            assert parse_model_json_output(model_output)
