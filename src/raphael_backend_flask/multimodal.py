@@ -22,6 +22,10 @@ def handle_multimodal_url(user_id: int, url: str) -> int:
         raise FlashException("Could not process video.")
 
     title = info.get("title")
+    # Handle some websites that we're unable to extract a title from
+    # or where the title is extracted as "Video by xxxx" instead of the actual
+    # title. Often in these cases the description makes a better title , however
+    # we have to be carefule not to pull a very long description
     if not title or title.startswith("Video by"):
         desc = info.get("description")
         if desc and len(desc) < 150:
