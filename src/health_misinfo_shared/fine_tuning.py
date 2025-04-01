@@ -466,7 +466,7 @@ def infer_transcript_claims(transcript: list[dict]) -> Iterable[dict[str, Any]]:
 
 
 def infer_multimodal_claims(
-    bucket_name: str, video_path: str, model_name: str = "gemini-1.5-flash-001"
+    bucket_name: str, video_path: str, model_name: str = "gemini-2.0-flash-lite"
 ) -> Iterable[dict[str, Any]]:
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_LLM_LOCATION)
     model = GenerativeModel(model_name=model_name)

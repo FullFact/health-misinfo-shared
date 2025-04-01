@@ -14,7 +14,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
 from health_misinfo_shared.prompts import HEALTH_CLAIM_PROMPT
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
-GCP_LOCATION = "us-east4"  # NB: Gemini is not available in europe-west2 (yet?)
+GCP_LOCATION = "europe-west4"  # NB: Gemini is not available in europe-west2 (yet?)
 
 
 def generate_reponse(transcript: str) -> list[dict]:
