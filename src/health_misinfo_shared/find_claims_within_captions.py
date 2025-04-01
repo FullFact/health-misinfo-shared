@@ -12,6 +12,18 @@ from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_LLM_LOCATION = "us-east1"
 
+#######################################
+# ATTENTION
+#######################################
+# This script was written while we used
+# Gemini 1 + 1.5.
+# It has not been updated for 2.0, because
+# these quotas would all need working out again.
+#
+# If you want to run this again, please update
+# everything for gemini-flash-2.0.
+#######################################
+
 MODEL_PER_MINUTE_QUOTA = {
     "gemini-1.5-pro-preview-0409": 5,
     "gemini-1.0-pro": 300,
