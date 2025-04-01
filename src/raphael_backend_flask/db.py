@@ -86,7 +86,7 @@ def create_multimodal_claim_extraction_run(
         (
             user_id,
             video_id,
-            "gemini-1.5-flash-001",
+            "gemini-2.0-flash-lite",
             "processing",
         ),
     )
