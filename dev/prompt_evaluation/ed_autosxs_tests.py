@@ -5,8 +5,8 @@ from google.cloud import aiplatform
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
 GCP_PROJECT_NUMBER = 1447178727
-GCP_LLM_LOCATION = "europe-west4"  # NB: Gemini is not available in europe-west2 (yet?)
-CURRENT_MODEL = "gemini-1.0-pro"
+GCP_LLM_LOCATION = "europe-west4"
+CURRENT_MODEL = "gemini-2.0-flash-lite"
 
 BUCKET_FOLDER = "gs://fullfact-raphael-eval"
 EVALUATION_DATASET = os.path.join(BUCKET_FOLDER, "autosxs_eval.jsonl")

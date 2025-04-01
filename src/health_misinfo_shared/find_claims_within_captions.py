@@ -10,7 +10,7 @@ from health_misinfo_shared.data_parsing import parse_model_json_output
 from health_misinfo_shared.prompts import TRAINING_SET_HEALTH_CLAIMS_PROMPT
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
-GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)
+GCP_LLM_LOCATION = "us-east1"
 
 MODEL_PER_MINUTE_QUOTA = {
     "gemini-1.5-pro-preview-0409": 5,

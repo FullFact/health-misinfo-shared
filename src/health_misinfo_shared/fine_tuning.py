@@ -26,8 +26,8 @@ from health_misinfo_shared.prompts import (
 )
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
-GCP_LLM_LOCATION = "europe-west4"  # NB: Gemini is not available in europe-west2 (yet?)
-GCP_TUNED_MODEL_LOCATION = "europe-west4"  # where we do fine tuning/model storage
+GCP_LLM_LOCATION = "europe-west4"
+GCP_TUNED_MODEL_LOCATION = "europe-west4"
 CHECKWORTHY_EXPLANATIONS = ["high harm", "citation", "low harm"]
 UNCHECKWORTHY_EXPLANATIONS = ["nothing to check", "hedged claim"]
 VALID_EXPLANATIONS = CHECKWORTHY_EXPLANATIONS + UNCHECKWORTHY_EXPLANATIONS
@@ -450,10 +450,8 @@ def infer_transcript_claims(transcript: list[dict]) -> Iterable[dict[str, Any]]:
     vertexai.init(project=GCP_PROJECT_ID, location=GCP_TUNED_MODEL_LOCATION)
 
     chunks = youtube_api.form_chunks(transcript)
-    model = GenerativeModel("gemini-1.5-pro-preview-0514")
-    annotated_data_files = [
-        (Path(__file__).parent / "full_in_context_labelled_data.csv")
-    ]
+    model = GenerativeModel("gemini-2.0-flash-lite")
+    annotated_data_files = [Path(__file__).parent / "full_in_context_labelled_data.csv"]
     in_context_examples, empty_hold_out_set = construct_in_context_examples(
         annotated_data_files, split_frac=1.0
     )
@@ -525,9 +523,7 @@ if __name__ == "__main__":
         tuning("cj_tuned_multi_label_0", _training_data)
 
     if mode == "in_context":
-        model = GenerativeModel(
-            "gemini-1.5-pro-preview-0514"
-        )  # or is it 0514 (May 15th update)
+        model = GenerativeModel("gemini-2.0-flash-lite")
         annotated_data_files = [
             (Path(__file__).parent / "full_in_context_labelled_data.csv")
         ]

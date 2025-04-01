@@ -7,8 +7,8 @@ from vertexai.generative_models import GenerativeModel
 
 
 GCP_PROJECT_ID = "exemplary-cycle-195718"
-GCP_LLM_LOCATION = "us-east1"  # NB: Gemini is not available in europe-west2 (yet?)
-CURRENT_MODEL = "gemini-1.0-pro"
+GCP_LLM_LOCATION = "europe-west4"
+CURRENT_MODEL = "gemini-2.0-flash-lite"
 
 
 class ProcessingException(Exception):
