@@ -6,9 +6,9 @@ import tempfile
 import yt_dlp
 from google.cloud import storage
 
-from raphael_backend_flask.app import get_proxy_url
 from raphael_backend_flask.db import create_multimodal_claim_extraction_run
 from raphael_backend_flask.exceptions import FlashException
+from raphael_backend_flask.proxy import get_proxy_url
 
 GCS_BUCKET = "fullfact-nlp"
 GCS_FOLDER = "raphael/videos"

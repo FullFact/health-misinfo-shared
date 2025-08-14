@@ -1,6 +1,4 @@
 import json
-import os
-import random
 import re
 from html import unescape
 from io import StringIO
@@ -11,9 +9,9 @@ import requests
 import webvtt
 import yt_dlp
 
-from raphael_backend_flask.app import get_proxy_url
 from raphael_backend_flask.db import create_youtube_claim_extraction_run
 from raphael_backend_flask.exceptions import FlashException
+from raphael_backend_flask.proxy import get_proxy_url
 
 title_re = re.compile("<title>(.*) - YouTube</title>")
 urls_re = re.compile('(https://www.youtube.com/api/timedtext[^"]+lang=en)')
