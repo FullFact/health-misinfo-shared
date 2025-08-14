@@ -1,4 +1,6 @@
 import json
+import os
+import random
 import re
 from html import unescape
 from io import StringIO
@@ -9,6 +11,7 @@ import requests
 import webvtt
 import yt_dlp
 
+from raphael_backend_flask.app import get_proxy_url
 from raphael_backend_flask.db import create_youtube_claim_extraction_run
 from raphael_backend_flask.exceptions import FlashException
 
@@ -32,8 +35,14 @@ def _remove_overlap(
     return source
 
 
-def download_captions(url: str) -> list[dict]:
-    resp = requests.get(url)
+def download_captions(url: str, proxy_url: str) -> list[dict]:
+    resp = requests.get(
+        url,
+        proxies={
+            "http": proxy_url,
+            "https": proxy_url,
+        },
+    )
     resp.raise_for_status()
 
     subtitles: list[dict] = []
@@ -55,7 +64,10 @@ def handle_youtube_query(user_id: int, id_or_url: str) -> int:
     youtube_id = extract_youtube_id(id_or_url)
     youtube_url = f"https://youtube.com/watch?v={youtube_id}"
 
+    proxy_url = get_proxy_url()
+
     opts = {
+        "proxy": proxy_url,
         "verbose": True,
         "allowed_extractors": ["youtube$"],  # Only allow videos & lives
         "format": "ba[filesize<2M] / ba[filesize<5M] / wa / wa*",  # lowest size formats :)
@@ -63,8 +75,6 @@ def handle_youtube_query(user_id: int, id_or_url: str) -> int:
         "writeautomaticsub": True,
         "subtitleslangs": [".*orig"],  # Download subtitles only in original language
         "subtitlesformat": "vtt",  # Force VTT subtitles
-        # "quiet": True,  # Shut up
-        # "no_warnings": True,  # actually, commenting this out
         "noprogress": True,  # don't print progress
         "sleep_interval": 10.0,
         "max_sleep_interval": 20.0,
@@ -84,7 +94,7 @@ def handle_youtube_query(user_id: int, id_or_url: str) -> int:
         captions_url = str(res["requested_subtitles"]["en-orig"]["url"])
 
     metadata = {"title": title}
-    transcript = download_captions(captions_url)
+    transcript = download_captions(captions_url, proxy_url)
 
     claim_extraction_run_id = create_youtube_claim_extraction_run(
         user_id,

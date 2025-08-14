@@ -4,6 +4,10 @@ services:
     image: fullfact/raphael-backend:latest
     environment:
       - DB_PATH=/app/db/database.db
+      - PROXY_COUNT=${PROXY_COUNT}
+      - PROXY_USERNAME=${PROXY_USERNAME}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
+      - PROXY_DOMAIN=${PROXY_DOMAIN}
     volumes:
       - backend-data:/app/db
     ports:

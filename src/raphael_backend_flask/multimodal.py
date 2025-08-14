@@ -6,6 +6,7 @@ import tempfile
 import yt_dlp
 from google.cloud import storage
 
+from raphael_backend_flask.app import get_proxy_url
 from raphael_backend_flask.db import create_multimodal_claim_extraction_run
 from raphael_backend_flask.exceptions import FlashException
 
@@ -59,6 +60,7 @@ def fetch_video(url: str) -> dict:
         output_path = os.path.join(tmp_dir_name, "%(id)s.%(ext)s")
 
         opts = {
+            "proxy": get_proxy_url(),
             "noprogress": True,  # don't print progress
             "outtmpl": output_path,  # use the configured temp dir
             "noplaylist": True,  # don't download playlists
@@ -78,6 +80,7 @@ def fetch_video(url: str) -> dict:
 
 def is_downloadable(url: str) -> bool:
     opts = {
+        "proxy": get_proxy_url(),
         "simulate": True,
         "skip_download": True,  # Don't download the video (possibly redundant)
         "noprogress": True,  # don't print progress
