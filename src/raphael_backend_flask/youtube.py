@@ -1,13 +1,13 @@
-from io import StringIO
 import json
 import re
 from html import unescape
+from io import StringIO
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
 
 import requests
-import yt_dlp
 import webvtt
+import yt_dlp
 
 from raphael_backend_flask.db import create_youtube_claim_extraction_run
 from raphael_backend_flask.exceptions import FlashException
