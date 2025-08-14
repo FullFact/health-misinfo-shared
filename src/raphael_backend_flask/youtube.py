@@ -1,11 +1,14 @@
+from io import StringIO
 import json
 import re
 from html import unescape
+from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
 
 import requests
+import yt_dlp
+import webvtt
 
-from health_misinfo_shared.youtube_api import clean_str
 from raphael_backend_flask.db import create_youtube_claim_extraction_run
 from raphael_backend_flask.exceptions import FlashException
 
@@ -16,31 +19,72 @@ caption_re = re.compile(
 )
 
 
-def download_captions(html: str) -> list[dict]:
-    # only find URLs with lang=en
-    urls = urls_re.findall(html)
-    if not len(urls):
-        raise Exception("Couldn’t extract captions for that video")
+def _remove_overlap(
+    source: list[Any], compare: list[Any], key: Callable[[Any], Any] = lambda x: x
+) -> list[Any]:
+    if not compare or not source:
+        return source
 
-    url = urls[0].replace("\\u0026", "&")
+    max_overlap = min(len(source), len(compare))
+    for i in range(1, max_overlap + 1):
+        if [key(x) for x in source[:i]] == [key(x) for x in compare[-i:]]:
+            return source[i:]
+    return source
 
-    with requests.get(url, allow_redirects=False, timeout=60) as resp:
-        sentence = resp.text
 
-    sentences = [clean_str(m.groupdict()) for m in caption_re.finditer(sentence)]
-    return sentences
+def download_captions(url: str) -> list[dict]:
+    resp = requests.get(url)
+    resp.raise_for_status()
+
+    subtitles: list[dict] = []
+    for block in webvtt.read_buffer(StringIO(resp.text)).captions:
+        text = re.sub(r"<[^>]+>", "", block.text)
+        lines = (line for line in text.splitlines() if line.strip())
+        captions = [
+            {"sentence_text": line, "start": int(block.start_in_seconds)}
+            for line in lines
+        ]
+        captions = _remove_overlap(
+            captions, subtitles, key=lambda s: s["sentence_text"]
+        )
+        subtitles.extend(captions)
+    return subtitles
 
 
 def handle_youtube_query(user_id: int, id_or_url: str) -> int:
     youtube_id = extract_youtube_id(id_or_url)
     youtube_url = f"https://youtube.com/watch?v={youtube_id}"
-    with requests.get(youtube_url, timeout=60) as resp:
-        resp.raise_for_status()
-        video_html = resp.text
 
-    title = extract_title(video_html)
+    opts = {
+        "verbose": True,
+        "allowed_extractors": ["youtube$"],  # Only allow videos & lives
+        "format": "ba[filesize<2M] / ba[filesize<5M] / wa / wa*",  # lowest size formats :)
+        "skip_download": True,  # Don't download the video (possibly redundant)
+        "writeautomaticsub": True,
+        "subtitleslangs": [".*orig"],  # Download subtitles only in original language
+        "subtitlesformat": "vtt",  # Force VTT subtitles
+        # "quiet": True,  # Shut up
+        # "no_warnings": True,  # actually, commenting this out
+        "noprogress": True,  # don't print progress
+        "sleep_interval": 10.0,
+        "max_sleep_interval": 20.0,
+        "sleep_interval_requests": 1,
+        "sleep_interval_subtitles": 5,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["web_embedded"],
+            },
+        },
+    }
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        res = ydl.extract_info(youtube_url, download=False)
+        if not isinstance(res, dict):
+            return False
+        title = res["title"]
+        captions_url = str(res["requested_subtitles"]["en-orig"]["url"])
+
     metadata = {"title": title}
-    transcript = download_captions(video_html)
+    transcript = download_captions(captions_url)
 
     claim_extraction_run_id = create_youtube_claim_extraction_run(
         user_id,
